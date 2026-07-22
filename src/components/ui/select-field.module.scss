@@ -1,6 +1,8 @@
+@use "../../styles/mixins" as mixins;
+
 .field {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .label {
@@ -69,6 +71,8 @@
 }
 
 .error {
+  @include mixins.feedback-enter;
+
   margin: 0;
   color: var(--color-danger);
   font: var(--type-text-sm-regular);

@@ -9,6 +9,12 @@
   background: var(--color-canvas);
   cursor: pointer;
   place-items: center;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    transform var(--motion-instant) var(--ease-enter);
 
   &[data-size="sm"] {
     width: var(--icon-sm);
@@ -35,7 +41,10 @@
     border-color: currentcolor;
     content: "";
     opacity: 0;
-    transform: translateY(-10%) rotate(-45deg);
+    transform: translateY(-10%) rotate(-45deg) scale(0.65);
+    transition:
+      opacity var(--motion-fast) var(--ease-standard),
+      transform var(--motion-fast) var(--ease-playful);
   }
 
   &[type="radio"]::after {
@@ -44,7 +53,7 @@
     border: 0;
     border-radius: 50%;
     background: currentcolor;
-    transform: none;
+    transform: scale(0.65);
   }
 
   &:hover:not(:disabled) {
@@ -66,14 +75,23 @@
 
     &::after {
       opacity: 1;
+      transform: translateY(-10%) rotate(-45deg) scale(1);
     }
+  }
+
+  &[type="radio"]:checked::after {
+    transform: scale(1);
   }
 
   &[data-indeterminate]::after {
     width: 58%;
     height: 0;
     border-width: 0 0 2px;
-    transform: none;
+    transform: scale(1);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.94);
   }
 
   &[aria-invalid="true"] {
@@ -85,5 +103,16 @@
   &:disabled {
     cursor: not-allowed;
     opacity: 0.32;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .control,
+  .control::after {
+    transition: none;
+  }
+
+  .control:active:not(:disabled) {
+    transform: none;
   }
 }

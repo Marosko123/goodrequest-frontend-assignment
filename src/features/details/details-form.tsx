@@ -167,6 +167,7 @@ export function DetailsForm({
               inputMode="tel"
               onChange={handlePhoneChange}
               placeholder="123 321 123"
+              required
               type="tel"
             />
           </span>

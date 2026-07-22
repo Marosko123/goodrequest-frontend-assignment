@@ -18,7 +18,7 @@ test("contact and project pages expose real content and live totals", async ({
   ).toHaveAttribute("href", "tel:+421911750750");
 
   await page.getByRole("link", { name: "O projekte" }).click();
-  await expect(page.getByText("12 200,00 €")).toBeVisible();
+  await expect(page.getByText("12 200 €")).toBeVisible();
   await expect(page.getByText("1 028")).toBeVisible();
 });
 

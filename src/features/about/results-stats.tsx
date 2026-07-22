@@ -11,7 +11,8 @@ import styles from "./results-stats.module.scss";
 const currencyFormatter = new Intl.NumberFormat("sk-SK", {
   style: "currency",
   currency: "EUR",
-  minimumFractionDigits: 2,
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
 });
 const numberFormatter = new Intl.NumberFormat("sk-SK");
 

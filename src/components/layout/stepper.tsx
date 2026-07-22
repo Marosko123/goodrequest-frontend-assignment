@@ -26,7 +26,11 @@ export function Stepper({ currentStep }: { currentStep: DonationStep }) {
               key={step.number}
             >
               <span aria-hidden="true" className={styles.number}>
-                {isComplete ? <CheckIcon /> : step.number}
+                {isComplete ? (
+                  <CheckIcon data-motion="step-check" />
+                ) : (
+                  step.number
+                )}
               </span>
               <span className={styles.label}>{step.label}</span>
               {step.number < 3 ? (

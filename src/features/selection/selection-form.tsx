@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { type CSSProperties, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,12 @@ import { TextField } from "@/components/ui/text-field";
 import type { DonationSelection, Shelter } from "@/domain/donation";
 import { sheltersQueryOptions } from "@/lib/api/queries";
 
-import { formatAmountInput, parseAmountToCents } from "./amount";
+import {
+  formatAmountInput,
+  normalizeAmountEdit,
+  normalizeAmountOnBlur,
+  parseAmountToCents,
+} from "./amount";
 import { createSelectionSchema, type SelectionFormValues } from "./schema";
 import styles from "./selection-form.module.scss";
 
@@ -28,7 +33,7 @@ function getDefaultValues(
   initialValue?: DonationSelection,
 ): SelectionFormValues {
   if (!initialValue) {
-    return { target: "foundation", shelterId: null, amount: "" };
+    return { target: "foundation", shelterId: null, amount: "50" };
   }
 
   return {
@@ -95,7 +100,7 @@ export function SelectionForm({
           control={control}
           name="target"
           render={({ field }) => (
-            <div className={styles.targetOptions}>
+            <div className={styles.targetOptions} data-target={field.value}>
               <label
                 className={styles.targetOption}
                 data-selected={field.value === "shelter"}
@@ -134,7 +139,12 @@ export function SelectionForm({
         />
       </fieldset>
 
-      {target === "shelter" ? (
+      <div
+        aria-hidden={target !== "shelter"}
+        className={styles.shelterRegion}
+        data-expanded={target === "shelter"}
+        data-testid="shelter-region"
+      >
         <div className={styles.shelterSection}>
           {sheltersQuery.isError ? (
             <InlineAlert
@@ -161,7 +171,11 @@ export function SelectionForm({
                   value: shelter.id.toString(),
                   label: shelter.name,
                 }))}
-                disabled={sheltersQuery.isPending || sheltersQuery.isError}
+                disabled={
+                  target !== "shelter" ||
+                  sheltersQuery.isPending ||
+                  sheltersQuery.isError
+                }
                 error={errors.shelterId?.message}
                 id="shelter-id"
                 label="Útulok"
@@ -179,13 +193,46 @@ export function SelectionForm({
             )}
           />
         </div>
-      ) : null}
+      </div>
 
       <fieldset className={styles.amountFieldset}>
         <legend>Suma, ktorou chcem prispieť</legend>
-        <div className={styles.customAmount}>
+        <div
+          className={styles.customAmount}
+          data-amount-size={
+            amount.length > 8 ? "long" : amount.length > 6 ? "medium" : "short"
+          }
+          style={
+            {
+              "--amount-characters": Math.max(amount.length, 1),
+            } as CSSProperties
+          }
+        >
           <TextField
-            {...register("amount")}
+            {...register("amount", {
+              onBlur: (event) => {
+                setValue(
+                  "amount",
+                  normalizeAmountOnBlur(event.target.value, "sk"),
+                  {
+                    shouldDirty: true,
+                    shouldValidate: isSubmitted,
+                  },
+                );
+              },
+              onChange: (event) => {
+                const normalized = normalizeAmountEdit(
+                  event.target.value,
+                  "sk",
+                );
+                if (normalized.accepted) {
+                  setValue("amount", normalized.value, {
+                    shouldDirty: true,
+                    shouldValidate: isSubmitted,
+                  });
+                }
+              },
+            })}
             autoComplete="off"
             error={errors.amount?.message}
             id="amount"

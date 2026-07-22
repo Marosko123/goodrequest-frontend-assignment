@@ -1,4 +1,8 @@
+@use "../../styles/mixins" as mixins;
+
 .alert {
+  @include mixins.feedback-enter;
+
   display: flex;
   gap: var(--space-4);
   align-items: flex-start;

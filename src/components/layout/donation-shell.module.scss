@@ -22,9 +22,19 @@
 }
 
 .content {
-  align-self: start;
+  display: grid;
+  align-self: stretch;
   width: 100%;
+  min-width: 0;
   max-width: var(--content-max);
+
+  > section {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 100%;
+    flex-direction: column;
+  }
 }
 
 .media {

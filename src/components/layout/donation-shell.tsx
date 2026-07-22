@@ -35,7 +35,7 @@ export function DonationShell({
           <Stepper currentStep={currentStep} />
         </header>
         <main className={styles.content}>{children}</main>
-        <AppFooter />
+        <AppFooter showSocials={currentStep === 1} />
       </div>
       <aside aria-label="Fotografia podporovaného psa" className={styles.media}>
         <picture>

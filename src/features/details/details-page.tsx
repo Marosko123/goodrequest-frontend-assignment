@@ -22,6 +22,7 @@ export function DetailsPage() {
     <FlowGuard>
       <section>
         <h1 className={styles.title}>Potrebujeme od vás zopár informácií</h1>
+        <h2 className={styles.sectionTitle}>O vás</h2>
         <DetailsForm
           {...(state.donor ? { initialValue: state.donor } : {})}
           onBack={() => router.push("/")}

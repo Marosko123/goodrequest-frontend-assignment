@@ -1,7 +1,7 @@
 .page {
   display: grid;
   gap: var(--space-10);
-  padding-block: var(--space-6) var(--space-10);
+  padding-block: calc(var(--space-6) + var(--space-1)) var(--space-10);
 
   h1 {
     margin: 0;
@@ -10,9 +10,13 @@
 
 .contactGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-8);
+  grid-template-columns: repeat(3, minmax(0, 18rem));
+  justify-content: space-between;
+  width: 100%;
+  max-width: var(--public-image-max);
+  min-height: 14rem;
   padding-block: var(--space-5);
+  margin-inline: auto;
 }
 
 .contactItem {
@@ -35,6 +39,11 @@
     color: var(--color-primary);
     font: var(--type-text-md-medium);
     overflow-wrap: anywhere;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
 
@@ -72,6 +81,8 @@
   .contactGrid {
     grid-template-columns: 1fr;
     gap: var(--space-10);
+    justify-content: stretch;
+    min-height: 0;
   }
 
   .image {

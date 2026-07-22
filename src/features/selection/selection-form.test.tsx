@@ -89,6 +89,7 @@ describe("SelectionForm", () => {
     renderForm();
     const user = userEvent.setup();
 
+    await user.clear(screen.getByRole("textbox", { name: "Vlastná suma" }));
     await user.click(screen.getByRole("button", { name: "Pokračovať" }));
 
     const amount = screen.getByRole("textbox", { name: "Vlastná suma" });

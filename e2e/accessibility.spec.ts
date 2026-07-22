@@ -28,6 +28,6 @@ test("public and donation routes have no serious automated findings", async ({
   await expectNoSeriousAxeFindings(page);
 
   await page.goto("/about/");
-  await expect(page.getByText("12 200,00 €")).toBeVisible();
+  await expect(page.getByText("12 200 €")).toBeVisible();
   await expectNoSeriousAxeFindings(page);
 });

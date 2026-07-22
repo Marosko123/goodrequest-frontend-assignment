@@ -109,13 +109,15 @@ describe("Figma design contract", () => {
     expect(about).toContain("height: 14.75rem;");
     expect(about).toContain("border-block: 1px solid var(--color-border);");
     expect(stats).toContain("max-width: 76rem;");
-    expect(stats).toContain("min-height: 6.75rem;");
+    expect(stats).toContain("min-height: 6.5rem;");
     expect(about).not.toContain("clamp(");
     expect(contact).not.toContain("clamp(");
-    expect(footer).toContain("padding-block-start: var(--space-6);");
+    expect(footer).toContain(
+      "padding-block-start: calc(var(--space-6) - 1px);",
+    );
     expect(footer).not.toContain("padding-block: var(--space-6);");
     expect(readSource("components/layout/logo.module.scss")).toContain(
-      "height: 1.75rem;",
+      "height: 2rem;",
     );
   });
 });

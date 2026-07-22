@@ -10,6 +10,11 @@
   --type-heading-xl-regular: 400 3.75rem/4.5rem var(--font-sans);
   --type-heading-xl-semibold: 600 3.75rem/4.5rem var(--font-sans);
   --type-heading-xl-semibold-compact: 600 2.5rem/3rem var(--font-sans);
+  --type-amount-short: 400 3.75rem/4.5rem var(--font-sans);
+  --type-amount-medium: 400 3.25rem/4rem var(--font-sans);
+  --type-amount-long: 400 2.75rem/3.5rem var(--font-sans);
+  --type-amount-compact: 400 clamp(2rem, 11vw, 2.75rem) / 3.5rem
+    var(--font-sans);
   --type-text-xl-semibold: 600 1.25rem/2rem var(--font-sans);
   --type-text-lg-medium: 500 1.125rem/1.5rem var(--font-sans);
   --type-text-md-regular: 400 1rem/1.5rem var(--font-sans);
@@ -86,7 +91,13 @@
   --public-content-max: 80rem;
   --public-image-max: 70rem;
   --public-image-height: 23.5rem;
-  --transition-fast: 140ms;
-  --transition-base: 220ms;
+  --motion-instant: 120ms;
+  --motion-fast: 160ms;
+  --motion-base: 220ms;
+  --motion-celebration: 420ms;
+  --transition-fast: var(--motion-fast);
+  --transition-base: var(--motion-base);
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-playful: cubic-bezier(0.34, 1.56, 0.64, 1);
 }

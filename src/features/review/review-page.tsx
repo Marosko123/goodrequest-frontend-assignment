@@ -24,8 +24,6 @@ export function ReviewPage() {
           <ReviewForm
             donor={state.donor}
             onBack={() => router.push("/details")}
-            onEditDetails={() => router.push("/details")}
-            onEditSelection={() => router.push("/")}
             onSuccess={() => router.replace("/success")}
             selection={state.selection}
             submit={() =>

@@ -1,6 +1,8 @@
 @use "../../styles/mixins" as mixins;
 
 .button {
+  @include mixins.pressable;
+
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -9,10 +11,6 @@
   font: var(--type-text-md-medium);
   cursor: pointer;
   user-select: none;
-  transition:
-    background-color var(--transition-fast) var(--ease-standard),
-    box-shadow var(--transition-fast) var(--ease-standard),
-    opacity var(--transition-fast) var(--ease-standard);
 
   &[data-size="sm"] {
     min-height: var(--control-sm);
@@ -147,10 +145,23 @@
   place-items: center;
   width: 1.25rem;
   height: 1.25rem;
+  transition: transform var(--motion-fast) var(--ease-enter);
 
   .button[data-size="sm"] & {
     width: 1rem;
     height: 1rem;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:hover:not(:disabled) {
+    .icon:first-child {
+      transform: translateX(-2px);
+    }
+
+    .icon:last-child {
+      transform: translateX(2px);
+    }
   }
 }
 
@@ -166,5 +177,22 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button:hover:not(:disabled),
+  .button:active:not(:disabled),
+  .button:hover:not(:disabled) .icon {
+    transform: none;
+  }
+
+  .icon {
+    transition: none;
+  }
+
+  .spinner {
+    animation: none;
+    transform: none;
   }
 }

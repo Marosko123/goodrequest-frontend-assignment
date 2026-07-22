@@ -36,8 +36,6 @@ function renderForm({
     <ReviewForm
       donor={donor}
       onBack={vi.fn()}
-      onEditDetails={vi.fn()}
-      onEditSelection={vi.fn()}
       onSuccess={onSuccess}
       selection={selection}
       submit={submit}
@@ -49,20 +47,22 @@ function renderForm({
 describe("ReviewForm", () => {
   it("shows a domain-consistent summary for both contribution targets", () => {
     const { unmount } = renderForm();
-    expect(screen.getByText("Celá nadácia GoodBoy")).toBeInTheDocument();
+    expect(
+      screen.getByText("Finančný príspevok celej nadácii"),
+    ).toBeInTheDocument();
     expect(screen.queryByText("Žilinský útulok")).not.toBeInTheDocument();
     unmount();
 
     renderForm({ selection: shelterSelection });
     expect(screen.getByText("Žilinský útulok")).toBeInTheDocument();
-    expect(screen.getByText("20,00 €")).toBeInTheDocument();
+    expect(screen.getByText("20 €")).toBeInTheDocument();
   });
 
   it("requires consent and focuses it before submission", async () => {
     const { submit } = renderForm();
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole("button", { name: "Odoslať príspevok" }));
+    await user.click(screen.getByRole("button", { name: "Odoslať formulár" }));
 
     expect(screen.getByRole("checkbox", { name: /súhlasím/i })).toHaveFocus();
     expect(submit).not.toHaveBeenCalled();
@@ -98,7 +98,7 @@ describe("ReviewForm", () => {
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("checkbox", { name: /súhlasím/i }));
-    await user.click(screen.getByRole("button", { name: "Odoslať príspevok" }));
+    await user.click(screen.getByRole("button", { name: "Odoslať formulár" }));
 
     expect(
       await screen.findByText(/výsledok odoslania nepoznáme/i),

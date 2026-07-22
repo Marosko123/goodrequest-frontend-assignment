@@ -1,11 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
+import { ChoiceControl } from "@/components/ui/choice-control";
+import { ArrowLeftIcon } from "@/components/ui/icons";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import type { DonationSelection, DonorDetails } from "@/domain/donation";
 import type { ContributionResponse } from "@/lib/api/contracts";
@@ -28,22 +31,27 @@ type ReviewFormValues = z.input<typeof reviewSchema>;
 const currencyFormatter = new Intl.NumberFormat("sk-SK", {
   style: "currency",
   currency: "EUR",
-  minimumFractionDigits: 2,
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
 });
+
+function formatPhone(phone: string | null): string | null {
+  if (!phone) {
+    return null;
+  }
+
+  return parsePhoneNumberFromString(phone)?.formatInternational() ?? phone;
+}
 
 export function ReviewForm({
   donor,
   onBack,
-  onEditDetails,
-  onEditSelection,
   onSuccess,
   selection,
   submit,
 }: {
   donor: DonorDetails;
   onBack: () => void;
-  onEditDetails: () => void;
-  onEditSelection: () => void;
   onSuccess: () => void;
   selection: DonationSelection;
   submit: () => Promise<ContributionResponse>;
@@ -82,7 +90,8 @@ export function ReviewForm({
   }
 
   const donorName = [donor.firstName, donor.lastName].filter(Boolean).join(" ");
-  const submitLabel = submissionError ? "Skúsiť znova" : "Odoslať príspevok";
+  const formattedPhone = formatPhone(donor.phoneE164);
+  const submitLabel = submissionError ? "Skúsiť znova" : "Odoslať formulár";
 
   return (
     <form
@@ -95,58 +104,45 @@ export function ReviewForm({
     >
       <section
         aria-labelledby="contribution-summary-title"
-        className={styles.card}
+        className={styles.block}
       >
-        <div className={styles.cardHeading}>
-          <h2 id="contribution-summary-title">Príspevok</h2>
-          <button
-            className={styles.editButton}
-            onClick={onEditSelection}
-            type="button"
-          >
-            Upraviť
-          </button>
-        </div>
+        <h2 id="contribution-summary-title">Zhrnutie</h2>
         <dl className={styles.summary}>
           <div>
-            <dt>Komu pomáhate</dt>
+            <dt>Forma pomoci</dt>
             <dd>
               {selection.target === "foundation"
-                ? "Celá nadácia GoodBoy"
-                : selection.shelter.name}
+                ? "Finančný príspevok celej nadácii"
+                : "Finančný príspevok konkrétnemu útulku"}
             </dd>
           </div>
+          {selection.target === "shelter" ? (
+            <div>
+              <dt>Útulok</dt>
+              <dd>{selection.shelter.name}</dd>
+            </div>
+          ) : null}
           <div>
-            <dt>Suma</dt>
+            <dt>Suma príspevku</dt>
             <dd>{currencyFormatter.format(selection.amountCents / 100)}</dd>
           </div>
         </dl>
       </section>
 
-      <section aria-labelledby="donor-summary-title" className={styles.card}>
-        <div className={styles.cardHeading}>
-          <h2 id="donor-summary-title">Vaše údaje</h2>
-          <button
-            className={styles.editButton}
-            onClick={onEditDetails}
-            type="button"
-          >
-            Upraviť
-          </button>
-        </div>
+      <section aria-label="Vaše údaje" className={styles.block}>
         <dl className={styles.summary}>
           <div>
-            <dt>Meno</dt>
+            <dt>Meno a priezvisko</dt>
             <dd>{donorName}</dd>
           </div>
           <div>
             <dt>E-mail</dt>
             <dd>{donor.email}</dd>
           </div>
-          {donor.phoneE164 ? (
+          {formattedPhone ? (
             <div>
-              <dt>Telefón</dt>
-              <dd>{donor.phoneE164}</dd>
+              <dt>Telefónne číslo</dt>
+              <dd>{formattedPhone}</dd>
             </div>
           ) : null}
         </dl>
@@ -154,17 +150,14 @@ export function ReviewForm({
 
       <div className={styles.consentField}>
         <label className={styles.consentLabel}>
-          <input
+          <ChoiceControl
             {...register("consent")}
             aria-describedby={errors.consent ? "consent-error" : undefined}
             aria-invalid={errors.consent ? "true" : undefined}
-            className={styles.checkbox}
+            size="sm"
             type="checkbox"
           />
-          <span>
-            Súhlasím so spracovaním osobných údajov na účely evidencie
-            príspevku.
-          </span>
+          <span>Súhlasím so spracovaním mojich osobných údajov</span>
         </label>
         {errors.consent?.message ? (
           <p className={styles.error} id="consent-error" role="alert">
@@ -182,7 +175,13 @@ export function ReviewForm({
       </div>
 
       <div className={styles.actions}>
-        <Button disabled={isSubmitting} onClick={onBack} variant="secondary">
+        <Button
+          disabled={isSubmitting}
+          icon={<ArrowLeftIcon />}
+          iconPosition="start"
+          onClick={onBack}
+          variant="secondary"
+        >
           Späť
         </Button>
         <Button loading={isSubmitting} type="submit">

@@ -31,7 +31,7 @@ describe("ResultsStats", () => {
 
     renderStats();
 
-    expect(await screen.findByText("12 200,00 €")).toBeVisible();
+    expect(await screen.findByText("12 200 €")).toBeVisible();
     expect(screen.getByText("1 028")).toBeVisible();
     expect(screen.getByText("Celková vyzbieraná hodnota")).toBeVisible();
   });
@@ -53,7 +53,7 @@ describe("ResultsStats", () => {
     succeeds = true;
     await userEvent.click(screen.getByRole("button", { name: "Skúsiť znova" }));
 
-    expect(await screen.findByText("75,00 €")).toBeVisible();
+    expect(await screen.findByText("75 €")).toBeVisible();
     expect(screen.getByText("8")).toBeVisible();
   });
 });

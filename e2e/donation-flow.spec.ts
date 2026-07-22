@@ -73,8 +73,10 @@ test("shelter selection remains consistent through review", async ({
   await page.getByRole("button", { name: "Pokračovať" }).click();
 
   await expect(page.getByText("Žilinský útulok")).toBeVisible();
-  await expect(page.getByText("20,00 €")).toBeVisible();
-  await expect(page.getByText("Celá nadácia GoodBoy")).toHaveCount(0);
+  await expect(page.getByText("20 €")).toBeVisible();
+  await expect(
+    page.getByText("Finančný príspevok celej nadácii"),
+  ).toHaveCount(0);
 });
 
 test("validation and ambiguous network failure preserve user control", async ({
@@ -103,10 +105,10 @@ test("validation and ambiguous network failure preserve user control", async ({
     .getByRole("textbox", { name: "E-mailová adresa" })
     .fill("jan@example.sk");
   await page.getByRole("button", { name: "Pokračovať" }).click();
-  await page.getByRole("button", { name: "Odoslať príspevok" }).click();
+  await page.getByRole("button", { name: "Odoslať formulár" }).click();
   await expect(page.getByRole("checkbox", { name: /súhlasím/i })).toBeFocused();
   await page.getByRole("checkbox", { name: /súhlasím/i }).check();
-  await page.getByRole("button", { name: "Odoslať príspevok" }).click();
+  await page.getByRole("button", { name: "Odoslať formulár" }).click();
 
   await expect(page.getByText(/výsledok odoslania nepoznáme/i)).toBeVisible();
   expect(submitCount).toBe(1);
