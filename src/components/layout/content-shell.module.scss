@@ -1,0 +1,23 @@
+.shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  width: min(100%, var(--page-max));
+  min-height: 100svh;
+  padding: clamp(1.25rem, 4vw, 4rem) clamp(1.25rem, 6vw, 5rem) 0;
+  margin-inline: auto;
+}
+
+.back {
+  display: inline-flex;
+  min-height: 2.75rem;
+  gap: var(--space-2);
+  align-items: center;
+  color: var(--color-primary);
+  font-weight: 700;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+  }
+}
