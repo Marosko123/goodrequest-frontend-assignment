@@ -258,7 +258,7 @@
 
 @media (width <= 22rem) {
   .actions {
-    flex-direction: column-reverse;
+    flex-direction: column;
 
     > * {
       width: 100%;

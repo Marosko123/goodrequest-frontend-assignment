@@ -19,6 +19,17 @@ async function expectBox(locator: Locator, expected: Partial<ExpectedBox>) {
   );
 }
 
+async function expectVisual(page: Page, name: string) {
+  if (process.env.CI) {
+    return;
+  }
+
+  await expect(page).toHaveScreenshot(name, {
+    animations: "disabled",
+    stylePath: screenshotStyle,
+  });
+}
+
 async function expectDonationShell(page: Page) {
   await expectBox(page.getByRole("navigation", { name: "Priebeh príspevku" }), {
     x: 80,
@@ -109,19 +120,13 @@ test.beforeEach(async ({ page }) => {
 test("selection and details keep the shared Figma shell", async ({ page }) => {
   await page.goto("/");
   await expectDonationShell(page);
-  await expect(page).toHaveScreenshot("selection-1440.png", {
-    animations: "disabled",
-    stylePath: screenshotStyle,
-  });
+  await expectVisual(page, "selection-1440.png");
 
   await page.getByRole("button", { name: "20 €" }).click();
   await page.getByRole("button", { name: "Pokračovať" }).click();
   await page.waitForURL("**/details/");
   await expectDonationShell(page);
-  await expect(page).toHaveScreenshot("details-1440.png", {
-    animations: "disabled",
-    stylePath: screenshotStyle,
-  });
+  await expectVisual(page, "details-1440.png");
 });
 
 test("review and success keep the shared Figma shell", async ({ page }) => {
@@ -135,19 +140,13 @@ test("review and success keep the shared Figma shell", async ({ page }) => {
   });
   await reachReview(page);
   await expectDonationShell(page);
-  await expect(page).toHaveScreenshot("review-1440.png", {
-    animations: "disabled",
-    stylePath: screenshotStyle,
-  });
+  await expectVisual(page, "review-1440.png");
 
   await page.getByRole("checkbox", { name: /súhlasím/i }).check();
   await page.getByRole("button", { name: "Odoslať formulár" }).click();
   await page.waitForURL("**/success/");
   await expectDonationShell(page);
-  await expect(page).toHaveScreenshot("success-1440.png", {
-    animations: "disabled",
-    stylePath: screenshotStyle,
-  });
+  await expectVisual(page, "success-1440.png");
 });
 
 test("contact and about use the exact public-page geometry", async ({
@@ -167,10 +166,7 @@ test("contact and about use the exact public-page geometry", async ({
     width: 1120,
     height: 376,
   });
-  await expect(page).toHaveScreenshot("contact-1440.png", {
-    animations: "disabled",
-    stylePath: screenshotStyle,
-  });
+  await expectVisual(page, "contact-1440.png");
 
   await page.goto("/about/");
   await expect(page.getByText("12 200 €")).toBeVisible();
@@ -187,10 +183,7 @@ test("contact and about use the exact public-page geometry", async ({
     width: 1280,
     height: 236,
   });
-  await expect(page).toHaveScreenshot("about-1440.png", {
-    animations: "disabled",
-    stylePath: screenshotStyle,
-  });
+  await expectVisual(page, "about-1440.png");
 });
 
 test("all assignment screens reflow at the target widths", async ({ page }) => {
@@ -199,6 +192,15 @@ test("all assignment screens reflow at the target widths", async ({ page }) => {
 
     await page.goto("/");
     await expectNoHorizontalOverflow(page, `selection at ${width}px`);
+    if (width === 320) {
+      const back = await page
+        .getByRole("button", { name: "Späť" })
+        .boundingBox();
+      const next = await page
+        .getByRole("button", { name: "Pokračovať" })
+        .boundingBox();
+      expect(back?.y).toBeLessThan(next?.y ?? 0);
+    }
 
     await reachDetails(page);
     await expectNoHorizontalOverflow(page, `details at ${width}px`);

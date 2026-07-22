@@ -74,9 +74,9 @@ test("shelter selection remains consistent through review", async ({
 
   await expect(page.getByText("Žilinský útulok")).toBeVisible();
   await expect(page.getByText("20 €")).toBeVisible();
-  await expect(
-    page.getByText("Finančný príspevok celej nadácii"),
-  ).toHaveCount(0);
+  await expect(page.getByText("Finančný príspevok celej nadácii")).toHaveCount(
+    0,
+  );
 });
 
 test("validation and ambiguous network failure preserve user control", async ({
