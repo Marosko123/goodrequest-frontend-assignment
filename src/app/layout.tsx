@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import "@fontsource-variable/inter";
 import "@mantine/core/styles.css";
 import "./globals.scss";
 

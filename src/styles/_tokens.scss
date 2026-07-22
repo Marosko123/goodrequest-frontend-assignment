@@ -1,0 +1,54 @@
+:root {
+  --font-sans:
+    "Inter Variable", "Inter", -apple-system, blinkmacsystemfont, "Segoe UI",
+    sans-serif;
+
+  --color-canvas: #fff;
+  --color-surface: #f5f6f8;
+  --color-surface-hover: #eaecf0;
+  --color-surface-pressed: #dfe2e7;
+  --color-text: #111827;
+  --color-text-secondary: #475467;
+  --color-text-muted: #98a2b3;
+  --color-border: #d0d5dd;
+  --color-border-subtle: #e4e7ec;
+  --color-primary: #5548e8;
+  --color-primary-hover: #4838da;
+  --color-primary-pressed: #3d2fbd;
+  --color-primary-soft: #e9e7ff;
+  --color-primary-disabled: #c8c4f7;
+  --color-danger: #d92d5b;
+  --color-danger-soft: #fff1f4;
+  --color-success: #067a58;
+  --color-success-soft: #ecfdf3;
+  --color-warning: #a15c00;
+  --color-warning-soft: #fff7e8;
+  --color-focus-ring: rgb(85 72 232 / 32%);
+  --color-shadow: rgb(16 24 40 / 12%);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --shadow-focus: 0 0 0 4px var(--color-focus-ring);
+  --shadow-card: 0 18px 48px rgb(16 24 40 / 8%);
+
+  --control-height: 3.5rem;
+  --page-max: 90rem;
+  --content-max: 41.125rem;
+  --transition-fast: 140ms;
+  --transition-base: 220ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+}

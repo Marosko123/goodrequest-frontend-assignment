@@ -1,0 +1,73 @@
+@use "../../styles/mixins" as mixins;
+
+.field {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.label {
+  color: var(--color-text);
+  font-size: 0.9375rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.required {
+  margin-inline-start: var(--space-1);
+  color: var(--color-danger);
+}
+
+.input {
+  @include mixins.interactive-control;
+
+  width: 100%;
+  min-width: 0;
+  padding: 0 var(--space-4);
+  border: 1px solid transparent;
+  background: var(--color-surface);
+  color: var(--color-text);
+
+  &::placeholder {
+    color: var(--color-text-muted);
+    opacity: 1;
+  }
+
+  &:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+  }
+
+  &:focus-visible {
+    border-color: var(--color-primary);
+    background: var(--color-canvas);
+    box-shadow: var(--shadow-focus);
+    outline: none;
+  }
+
+  &[aria-invalid="true"] {
+    border-color: var(--color-danger);
+    background: var(--color-danger-soft);
+  }
+
+  &:disabled {
+    color: var(--color-text-muted);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+}
+
+.hint,
+.error {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.hint {
+  color: var(--color-text-secondary);
+}
+
+.error {
+  color: var(--color-danger);
+  font-weight: 550;
+}
