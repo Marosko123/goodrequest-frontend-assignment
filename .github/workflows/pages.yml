@@ -5,8 +5,10 @@ on:
     branches:
       - main
     paths:
+      - ".github/workflows/pages.yml"
       - "app/**"
       - "pages/**"
+      - "placeholder/**"
       - "src/**"
       - "public/**"
       - "package.json"
@@ -29,24 +31,32 @@ jobs:
     name: Build static site
     runs-on: ubuntu-latest
     outputs:
-      ready: ${{ steps.preflight.outputs.ready }}
+      mode: ${{ steps.preflight.outputs.mode }}
+      artifact_path: ${{ steps.preflight.outputs.artifact_path }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Check project readiness
+      - name: Select deployment mode
         id: preflight
         shell: bash
         run: |
           if [[ -f package.json && -f package-lock.json ]]; then
-            echo "ready=true" >> "$GITHUB_OUTPUT"
+            echo "mode=next" >> "$GITHUB_OUTPUT"
+            echo "artifact_path=out" >> "$GITHUB_OUTPUT"
+          elif [[ -f package.json || -f package-lock.json ]]; then
+            echo "Both package.json and package-lock.json are required for a Next.js build." >&2
+            exit 1
+          elif [[ -f placeholder/index.html ]]; then
+            echo "mode=placeholder" >> "$GITHUB_OUTPUT"
+            echo "artifact_path=placeholder" >> "$GITHUB_OUTPUT"
           else
-            echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "Next.js project is not present yet; skipping build and deployment."
+            echo "Neither a complete Next.js project nor placeholder/index.html is available." >&2
+            exit 1
           fi
 
       - name: Set up Node.js
-        if: steps.preflight.outputs.ready == 'true'
+        if: steps.preflight.outputs.mode == 'next'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
@@ -54,13 +64,13 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Configure Pages
-        if: steps.preflight.outputs.ready == 'true'
+        if: steps.preflight.outputs.mode == 'next'
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
         with:
           static_site_generator: next
 
       - name: Restore Next.js cache
-        if: steps.preflight.outputs.ready == 'true'
+        if: steps.preflight.outputs.mode == 'next'
         uses: actions/cache@a7833574556fa59680c1b7cb190c1735db73ebf0 # v5.0.0
         with:
           path: .next/cache
@@ -69,26 +79,23 @@ jobs:
             ${{ runner.os }}-node-24-nextjs-${{ hashFiles('package-lock.json') }}-
 
       - name: Install dependencies
-        if: steps.preflight.outputs.ready == 'true'
+        if: steps.preflight.outputs.mode == 'next'
         run: npm ci
 
       - name: Build static export
-        if: steps.preflight.outputs.ready == 'true'
+        if: steps.preflight.outputs.mode == 'next'
         run: npm run build
 
-      - name: Verify static export
-        if: steps.preflight.outputs.ready == 'true'
-        run: test -f out/index.html
+      - name: Verify Pages artifact
+        run: test -f "${{ steps.preflight.outputs.artifact_path }}/index.html"
 
       - name: Upload Pages artifact
-        if: steps.preflight.outputs.ready == 'true'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: out
+          path: ${{ steps.preflight.outputs.artifact_path }}
 
   deploy:
     name: Deploy to Pages
-    if: needs.build.outputs.ready == 'true'
     needs: build
     runs-on: ubuntu-latest
     permissions:

@@ -48,4 +48,4 @@ Vytvoriť kvalitnú, responzívnu aplikáciu v Next.js a TypeScripte, ktorá umo
 
 ## Aktuálny stav
 
-Repozitár je v tejto fáze zámerne iba pripravený. Neobsahuje aplikačný scaffold, závislosti ani dočasnú webovú stránku.
+Repozitár v tejto fáze obsahuje iba statický placeholder bez závislostí a aplikačného scaffoldu. Po pridaní kompletného npm projektu workflow automaticky nasadí Next.js export namiesto placeholderu.
