@@ -1,0 +1,98 @@
+@use "../../styles/mixins" as mixins;
+
+.form {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.nameGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-5);
+}
+
+.phoneField {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.phoneLabel {
+  font-size: 0.9375rem;
+  font-weight: 650;
+}
+
+.phoneControl {
+  @include mixins.interactive-control;
+
+  display: grid;
+  grid-template-columns: 8rem minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid transparent;
+  background: var(--color-surface);
+
+  &:focus-within {
+    border-color: var(--color-primary);
+    background: var(--color-canvas);
+    box-shadow: var(--shadow-focus);
+  }
+
+  &:has(.phoneInput[aria-invalid="true"]) {
+    border-color: var(--color-danger);
+    background: var(--color-danger-soft);
+  }
+}
+
+.countrySelect,
+.phoneInput {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+}
+
+.countrySelect {
+  padding-inline: var(--space-4);
+  border-inline-end: 1px solid var(--color-border);
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.phoneInput {
+  width: 100%;
+  padding-inline: var(--space-4);
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+}
+
+.error {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 0.8125rem;
+  font-weight: 550;
+}
+
+.actions {
+  display: flex;
+  justify-content: space-between;
+  padding-block-start: var(--space-4);
+}
+
+@media (width <= 38rem) {
+  .nameGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .phoneControl {
+    grid-template-columns: 7.25rem minmax(0, 1fr);
+  }
+
+  .actions {
+    gap: var(--space-3);
+
+    > * {
+      flex: 1;
+    }
+  }
+}
