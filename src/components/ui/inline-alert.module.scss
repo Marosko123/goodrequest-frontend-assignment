@@ -27,12 +27,12 @@
 .title {
   display: block;
   margin-block-end: var(--space-1);
+  font: var(--type-text-md-semibold);
 }
 
 .body {
   color: var(--color-text-secondary);
-  font-size: 0.875rem;
-  line-height: 1.5;
+  font: var(--type-text-sm-regular);
 }
 
 .action {

@@ -2,20 +2,22 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 
 import styles from "./button.module.scss";
 
-type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
+type ButtonVariant = "primary" | "secondary" | "destructive" | "link";
+type ButtonSize = "sm" | "md" | "lg" | "xl";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   loading?: boolean;
   variant?: ButtonVariant;
   icon?: ReactNode;
   iconPosition?: "start" | "end";
+  size?: ButtonSize;
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: styles.primary!,
   secondary: styles.secondary!,
-  danger: styles.danger!,
-  ghost: styles.ghost!,
+  destructive: styles.destructive!,
+  link: styles.link!,
 };
 
 export function Button({
@@ -25,6 +27,7 @@ export function Button({
   icon,
   iconPosition = "end",
   loading = false,
+  size = "xl",
   type = "button",
   variant = "primary",
   ...buttonProps
@@ -38,6 +41,8 @@ export function Button({
       {...buttonProps}
       aria-busy={loading || undefined}
       className={classes}
+      data-size={size}
+      data-variant={variant}
       disabled={disabled || loading}
       type={type}
     >

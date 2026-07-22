@@ -9,25 +9,27 @@ h1,
 h2,
 h3 {
   color: var(--color-text);
-  font-weight: 720;
-  letter-spacing: -0.035em;
 }
 
 h1 {
-  font-size: clamp(2.25rem, 4.2vw, 3.25rem);
-  line-height: 1.08;
+  font: var(--type-heading-lg-bold);
+  letter-spacing: var(--tracking-heading);
 }
 
 h2 {
-  font-size: clamp(1.75rem, 3vw, 2.5rem);
-  line-height: 1.12;
+  font: var(--type-text-xl-semibold);
 }
 
 h3 {
-  font-size: 1.125rem;
-  line-height: 1.35;
+  font: var(--type-text-lg-medium);
 }
 
 p {
-  line-height: 1.65;
+  font: var(--type-text-md-regular);
+}
+
+@media (width <= 48rem) {
+  h1 {
+    font: var(--type-heading-lg-bold-compact);
+  }
 }

@@ -2,6 +2,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-8);
+  max-width: 76rem;
   min-height: 9rem;
   margin: 0;
 
@@ -16,16 +17,13 @@
   dd {
     margin: 0;
     color: var(--color-primary);
-    font-size: clamp(2.5rem, 6vw, 4.75rem);
-    font-weight: 650;
-    letter-spacing: -0.045em;
-    line-height: 1;
+    font: var(--type-heading-xl-semibold);
+    letter-spacing: var(--tracking-heading);
   }
 
   dt {
     margin-block-start: var(--space-2);
-    font-size: 1.125rem;
-    font-weight: 650;
+    font: var(--type-text-lg-medium);
   }
 }
 
@@ -58,5 +56,9 @@
 @media (width <= 38rem) {
   .grid {
     grid-template-columns: 1fr;
+
+    dd {
+      font: var(--type-heading-xl-semibold-compact);
+    }
   }
 }

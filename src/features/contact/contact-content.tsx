@@ -1,6 +1,7 @@
 import Image from "next/image";
 
 import contactDog from "@/assets/contact-dog.jpg";
+import { MailIcon, MarkerIcon, PhoneIcon } from "@/components/ui/icons";
 
 import styles from "./contact-content.module.scss";
 
@@ -38,27 +39,14 @@ const contactItems: ContactItem[] = [
 
 function ContactIcon({ type }: { type: ContactItem["icon"] }) {
   if (type === "email") {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24">
-        <path d="M3 6.5 12 13l9-6.5M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" />
-      </svg>
-    );
+    return <MailIcon />;
   }
 
   if (type === "office") {
-    return (
-      <svg aria-hidden="true" viewBox="0 0 24 24">
-        <path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" />
-        <circle cx="12" cy="10" r="2.5" />
-      </svg>
-    );
+    return <MarkerIcon />;
   }
 
-  return (
-    <svg aria-hidden="true" viewBox="0 0 24 24">
-      <path d="M8.5 3H5a2 2 0 0 0-2 2c0 8.8 7.2 16 16 16a2 2 0 0 0 2-2v-3.5l-4.5-1-1.3 2.6a13.2 13.2 0 0 1-8.3-8.3l2.6-1.3L8.5 3Z" />
-    </svg>
-  );
+  return <PhoneIcon />;
 }
 
 export function ContactContent() {

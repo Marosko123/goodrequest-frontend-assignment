@@ -3,7 +3,8 @@
   gap: var(--space-6);
   align-items: center;
   justify-content: space-between;
-  padding-block: var(--space-6);
+  min-height: 3.5rem;
+  padding-block-start: var(--space-6);
   border-top: 1px solid var(--color-border);
 }
 
@@ -16,7 +17,7 @@
   gap: var(--space-8);
   align-items: center;
   color: var(--color-text-secondary);
-  font-size: 0.9375rem;
+  font: var(--type-text-md-regular);
 
   a {
     padding-block: var(--space-2);
@@ -28,6 +29,33 @@
   }
 }
 
+.footerLinks,
+.socials {
+  display: flex;
+  align-items: center;
+}
+
+.footerLinks {
+  gap: var(--space-8);
+}
+
+.socials {
+  gap: var(--space-4);
+  color: var(--color-text-muted);
+
+  a {
+    display: grid;
+    width: 1rem;
+    height: 1rem;
+    place-items: center;
+  }
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
 @media (width <= 32rem) {
   .footer {
     align-items: flex-start;
@@ -36,6 +64,12 @@
   .navigation {
     flex-direction: column;
     gap: var(--space-1);
+    align-items: flex-end;
+  }
+
+  .footerLinks {
+    flex-direction: column;
+    gap: var(--space-3);
     align-items: flex-end;
   }
 }

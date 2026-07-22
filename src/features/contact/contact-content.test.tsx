@@ -21,5 +21,8 @@ describe("ContactContent", () => {
     expect(
       screen.getByRole("img", { name: /zlatý retriever/i }),
     ).toBeInTheDocument();
+    expect(document.querySelector('[data-icon="mail"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-icon="marker"]')).toBeInTheDocument();
+    expect(document.querySelector('[data-icon="phone"]')).toBeInTheDocument();
   });
 });

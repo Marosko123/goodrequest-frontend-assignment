@@ -1,4 +1,5 @@
 import styles from "./stepper.module.scss";
+import { CheckIcon } from "../ui/icons";
 
 type DonationStep = 1 | 2 | 3;
 
@@ -25,7 +26,7 @@ export function Stepper({ currentStep }: { currentStep: DonationStep }) {
               key={step.number}
             >
               <span aria-hidden="true" className={styles.number}>
-                {step.number}
+                {isComplete ? <CheckIcon /> : step.number}
               </span>
               <span className={styles.label}>{step.label}</span>
               {step.number < 3 ? (

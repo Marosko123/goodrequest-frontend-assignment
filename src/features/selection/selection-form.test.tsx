@@ -64,6 +64,13 @@ describe("SelectionForm", () => {
     const onComplete = renderForm();
     const user = userEvent.setup();
 
+    expect(
+      screen.getByRole("button", { name: "Späť" }).querySelector("svg"),
+    ).toHaveAttribute("data-icon", "arrow-left");
+    expect(
+      screen.getByRole("button", { name: "Pokračovať" }).querySelector("svg"),
+    ).toHaveAttribute("data-icon", "arrow-right");
+
     await user.click(screen.getByRole("button", { name: "20 €" }));
     await user.click(screen.getByRole("button", { name: "Pokračovať" }));
 

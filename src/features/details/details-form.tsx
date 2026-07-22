@@ -6,6 +6,12 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ChevronDownIcon,
+  CountryFlag,
+} from "@/components/ui/icons";
+import {
   FormErrorSummary,
   type FormErrorItem,
 } from "@/components/ui/form-error-summary";
@@ -17,11 +23,13 @@ import { detailsSchema, type DetailsFormValues } from "./schema";
 import styles from "./details-form.module.scss";
 
 function getDefaultValues(initialValue?: DonorDetails): DetailsFormValues {
+  const dialCode = initialValue?.phoneCountry === "CZ" ? "+420" : "+421";
+
   return {
     firstName: initialValue?.firstName ?? "",
     lastName: initialValue?.lastName ?? "",
     email: initialValue?.email ?? "",
-    phone: initialValue?.phoneE164 ?? "",
+    phone: initialValue?.phoneE164?.replace(dialCode, "") ?? "",
     phoneCountry: initialValue?.phoneCountry ?? "SK",
   };
 }
@@ -58,8 +66,16 @@ export function DetailsForm({
     .map(([fieldId, label, message]) => ({ fieldId, label, message }));
 
   function handlePhoneChange(event: ChangeEvent<HTMLInputElement>) {
-    void phoneRegistration.onChange(event);
-    const detectedCountry = detectPhoneCountry(event.target.value);
+    const rawValue = event.target.value;
+    const detectedCountry = detectPhoneCountry(rawValue);
+    const nationalValue = detectedCountry
+      ? rawValue.replace(/^(?:\+|00)(?:420|421)\s*/, "")
+      : rawValue;
+
+    setValue("phone", nationalValue, {
+      shouldDirty: true,
+      shouldValidate: isSubmitted,
+    });
     if (detectedCountry && detectedCountry !== country) {
       setValue("phoneCountry", detectedCountry, { shouldDirty: true });
     }
@@ -118,33 +134,42 @@ export function DetailsForm({
             control={control}
             name="phoneCountry"
             render={({ field }) => (
-              <select
-                aria-label="Krajina telefónneho čísla"
-                className={styles.countrySelect}
-                id="phone-country"
-                name={field.name}
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                ref={field.ref}
-                value={field.value}
-              >
-                <option value="SK">🇸🇰 +421</option>
-                <option value="CZ">🇨🇿 +420</option>
-              </select>
+              <span className={styles.countryPicker}>
+                <CountryFlag country={field.value} />
+                <ChevronDownIcon />
+                <select
+                  aria-label="Krajina telefónneho čísla"
+                  className={styles.countrySelect}
+                  id="phone-country"
+                  name={field.name}
+                  onBlur={field.onBlur}
+                  onChange={field.onChange}
+                  ref={field.ref}
+                  value={field.value}
+                >
+                  <option value="SK">Slovensko +421</option>
+                  <option value="CZ">Česko +420</option>
+                </select>
+              </span>
             )}
           />
-          <input
-            {...phoneRegistration}
-            aria-describedby={errors.phone ? "phone-error" : undefined}
-            aria-invalid={errors.phone ? "true" : undefined}
-            autoComplete="tel"
-            className={styles.phoneInput}
-            id="phone"
-            inputMode="tel"
-            onChange={handlePhoneChange}
-            placeholder={country === "CZ" ? "777 123 456" : "0901 234 567"}
-            type="tel"
-          />
+          <span className={styles.phoneNumber}>
+            <span className={styles.prefix} data-testid="phone-prefix">
+              {country === "CZ" ? "+420" : "+421"}
+            </span>
+            <input
+              {...phoneRegistration}
+              aria-describedby={errors.phone ? "phone-error" : undefined}
+              aria-invalid={errors.phone ? "true" : undefined}
+              autoComplete="tel-national"
+              className={styles.phoneInput}
+              id="phone"
+              inputMode="tel"
+              onChange={handlePhoneChange}
+              placeholder="123 321 123"
+              type="tel"
+            />
+          </span>
         </div>
         {errors.phone?.message ? (
           <p className={styles.error} id="phone-error" role="alert">
@@ -156,10 +181,17 @@ export function DetailsForm({
       {isSubmitted ? <FormErrorSummary errors={errorItems} /> : null}
 
       <div className={styles.actions}>
-        <Button onClick={onBack} variant="secondary">
+        <Button
+          icon={<ArrowLeftIcon />}
+          iconPosition="start"
+          onClick={onBack}
+          variant="secondary"
+        >
           Späť
         </Button>
-        <Button type="submit">Pokračovať</Button>
+        <Button icon={<ArrowRightIcon />} type="submit">
+          Pokračovať
+        </Button>
       </div>
     </form>
   );

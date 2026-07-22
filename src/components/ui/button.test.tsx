@@ -10,7 +10,11 @@ describe("Button", () => {
     const user = userEvent.setup();
 
     render(<Button onClick={onClick}>Pokračovať</Button>);
-    await user.click(screen.getByRole("button", { name: "Pokračovať" }));
+    const button = screen.getByRole("button", { name: "Pokračovať" });
+
+    expect(button).toHaveAttribute("data-size", "xl");
+    expect(button).toHaveAttribute("data-variant", "primary");
+    await user.click(button);
 
     expect(onClick).toHaveBeenCalledOnce();
   });

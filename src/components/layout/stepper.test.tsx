@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { Stepper } from "./stepper";
@@ -16,6 +16,14 @@ describe("Stepper", () => {
     );
     expect(screen.getByText("Výber útulku").closest("li")).not.toHaveAttribute(
       "aria-current",
+    );
+
+    const completedStep = screen.getByText("Výber útulku").closest("li");
+    expect(completedStep).not.toBeNull();
+    expect(within(completedStep!).queryByText("1")).not.toBeInTheDocument();
+    expect(completedStep!.querySelector("svg")).toHaveAttribute(
+      "data-icon",
+      "check",
     );
   });
 });

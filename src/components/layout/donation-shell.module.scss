@@ -1,39 +1,38 @@
 .shell {
   display: grid;
-  grid-template-columns: minmax(0, 1.22fr) minmax(34rem, 1fr);
-  gap: clamp(2rem, 3vw, 3rem);
+  grid-template-columns: var(--content-max) var(--donation-media-width);
+  gap: var(--donation-layout-gap);
   width: min(100%, var(--page-max));
   min-height: 100svh;
-  padding: clamp(1rem, 2vw, 1.5rem);
+  padding-inline: var(--page-gutter-desktop) var(--donation-media-inset);
   margin-inline: auto;
 }
 
 .contentColumn {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr auto;
   min-width: 0;
-  min-height: calc(100svh - 3rem);
-  padding-inline: clamp(1rem, 4vw, 3.5rem);
+  min-height: 100svh;
+  padding-block: var(--page-padding-block-desktop);
 }
 
 .header {
-  padding-block: clamp(1.5rem, 5vh, 3.75rem) var(--space-8);
+  padding-block-end: var(--space-10);
 }
 
 .content {
   align-self: start;
   width: 100%;
   max-width: var(--content-max);
-  padding-block: var(--space-4) var(--space-12);
-  margin-inline: auto;
 }
 
 .media {
   position: sticky;
-  top: 1.5rem;
+  top: var(--donation-media-inset);
   align-self: start;
-  height: calc(100svh - 3rem);
-  min-height: 38rem;
+  height: calc(100svh - (2 * var(--donation-media-inset)));
+  min-height: 0;
   overflow: hidden;
   border-radius: var(--radius-xl);
   background: var(--color-surface);
@@ -47,14 +46,19 @@
   object-position: center;
 }
 
-@media (width <= 64rem) {
+@media (width < 90rem) and (width > 56rem) {
   .shell {
     grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.72fr);
     gap: var(--space-8);
+    padding-inline: var(--space-6);
   }
 
   .contentColumn {
-    padding-inline: var(--space-4);
+    padding-block: var(--space-10);
+  }
+
+  .header {
+    padding-block-end: var(--space-8);
   }
 }
 
@@ -68,27 +72,33 @@
 
   .contentColumn {
     min-height: auto;
-    padding-inline: clamp(1rem, 5vw, 2.5rem);
+    padding: var(--space-8) var(--space-6);
   }
 
   .header {
-    padding-block-start: var(--space-8);
-  }
-
-  .content {
-    padding-block-start: var(--space-4);
+    padding-block-end: var(--space-8);
   }
 
   .media {
     position: relative;
     top: auto;
     width: 100%;
-    height: clamp(12rem, 38vw, 22rem);
+    height: 22rem;
     min-height: 0;
     border-radius: 0 0 var(--radius-xl) var(--radius-xl);
   }
 
   .image {
     object-position: center 58%;
+  }
+}
+
+@media (width <= 32rem) {
+  .contentColumn {
+    padding-inline: var(--space-4);
+  }
+
+  .media {
+    height: 12rem;
   }
 }

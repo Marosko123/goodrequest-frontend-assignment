@@ -28,6 +28,11 @@ describe("DetailsForm", () => {
       screen.getByRole("combobox", { name: "Krajina telefónneho čísla" }),
       "CZ",
     );
+    expect(screen.getByTestId("phone-country-flag")).toHaveAttribute(
+      "data-country",
+      "CZ",
+    );
+    expect(screen.getByTestId("phone-prefix")).toHaveTextContent("+420");
     await user.type(
       screen.getByRole("textbox", { name: "Telefónne číslo" }),
       "777 123 456",
@@ -43,6 +48,16 @@ describe("DetailsForm", () => {
         phoneCountry: "CZ",
       }),
     );
+  });
+
+  it("uses vector flags instead of platform emoji", () => {
+    renderForm();
+
+    const country = screen.getByRole("combobox", {
+      name: "Krajina telefónneho čísla",
+    });
+    expect(country.textContent).not.toMatch(/[🇸🇰🇨🇿]/u);
+    expect(screen.getByTestId("phone-country-flag").tagName).toBe("svg");
   });
 
   it("synchronizes country when an international prefix is pasted", async () => {

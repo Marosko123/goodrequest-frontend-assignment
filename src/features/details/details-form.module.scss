@@ -17,15 +17,14 @@
 }
 
 .phoneLabel {
-  font-size: 0.9375rem;
-  font-weight: 650;
+  font: var(--type-text-sm-medium);
 }
 
 .phoneControl {
   @include mixins.interactive-control;
 
   display: grid;
-  grid-template-columns: 8rem minmax(0, 1fr);
+  grid-template-columns: 5rem minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid transparent;
   background: var(--color-surface);
@@ -42,7 +41,6 @@
   }
 }
 
-.countrySelect,
 .phoneInput {
   min-width: 0;
   border: 0;
@@ -50,16 +48,52 @@
   outline: none;
 }
 
-.countrySelect {
-  padding-inline: var(--space-4);
+.countryPicker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
   border-inline-end: 1px solid var(--color-border);
-  font-weight: 550;
+
+  > svg:first-child {
+    width: var(--icon-md);
+    height: var(--icon-md);
+  }
+
+  > svg:nth-child(2) {
+    width: var(--icon-sm);
+    height: var(--icon-sm);
+    color: var(--color-text-tertiary);
+  }
+}
+
+.countrySelect {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  border: 0;
+  opacity: 0;
   cursor: pointer;
+}
+
+.phoneNumber {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.prefix {
+  flex: none;
+  padding-inline-start: var(--space-4);
+  color: var(--color-text-secondary);
+  font: var(--type-text-md-regular);
 }
 
 .phoneInput {
   width: 100%;
-  padding-inline: var(--space-4);
+  padding: 0 var(--space-4) 0 var(--space-2);
+  font: var(--type-text-md-regular);
 
   &::placeholder {
     color: var(--color-text-muted);
@@ -69,8 +103,7 @@
 .error {
   margin: 0;
   color: var(--color-danger);
-  font-size: 0.8125rem;
-  font-weight: 550;
+  font: var(--type-text-sm-regular);
 }
 
 .actions {
@@ -85,7 +118,7 @@
   }
 
   .phoneControl {
-    grid-template-columns: 7.25rem minmax(0, 1fr);
+    grid-template-columns: 5rem minmax(0, 1fr);
   }
 
   .actions {

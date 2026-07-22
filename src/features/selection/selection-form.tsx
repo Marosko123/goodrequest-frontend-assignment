@@ -6,6 +6,7 @@ import { useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
+import { ArrowLeftIcon, ArrowRightIcon } from "@/components/ui/icons";
 import {
   FormErrorSummary,
   type FormErrorItem,
@@ -140,7 +141,7 @@ export function SelectionForm({
               action={
                 <Button
                   onClick={() => void sheltersQuery.refetch()}
-                  variant="ghost"
+                  variant="link"
                 >
                   Skúsiť znova
                 </Button>
@@ -219,10 +220,17 @@ export function SelectionForm({
       {isSubmitted ? <FormErrorSummary errors={errorItems} /> : null}
 
       <div className={styles.actions}>
-        <Button disabled variant="secondary">
+        <Button
+          disabled
+          icon={<ArrowLeftIcon />}
+          iconPosition="start"
+          variant="secondary"
+        >
           Späť
         </Button>
-        <Button type="submit">Pokračovať</Button>
+        <Button icon={<ArrowRightIcon />} type="submit">
+          Pokračovať
+        </Button>
       </div>
     </form>
   );

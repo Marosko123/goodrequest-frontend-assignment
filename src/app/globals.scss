@@ -20,7 +20,7 @@ body {
   margin: 0;
   background: var(--color-canvas);
   color: var(--color-text);
-  font-family: var(--font-sans);
+  font: var(--type-text-md-regular);
   font-synthesis: none;
   text-rendering: optimizelegibility;
 }

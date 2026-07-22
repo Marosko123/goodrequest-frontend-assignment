@@ -43,6 +43,7 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
           aria-describedby={describedBy || undefined}
           aria-invalid={error ? "true" : undefined}
           className={styles.input}
+          data-size="xl"
           id={id}
           ref={ref}
           required={required}

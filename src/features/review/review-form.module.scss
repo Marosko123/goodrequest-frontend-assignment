@@ -20,7 +20,7 @@
 
   h2 {
     margin: 0;
-    font-size: 1.125rem;
+    font: var(--type-text-md-semibold);
   }
 }
 
@@ -31,7 +31,7 @@
   border: 0;
   background: transparent;
   color: var(--color-primary);
-  font-weight: 650;
+  font: var(--type-text-md-medium);
   cursor: pointer;
 
   &:hover {
@@ -53,13 +53,14 @@
 
   dt {
     color: var(--color-text-secondary);
+    font: var(--type-text-md-regular);
   }
 
   dd {
     min-width: 0;
     margin: 0;
     overflow-wrap: anywhere;
-    font-weight: 650;
+    font: var(--type-text-md-semibold);
   }
 }
 
@@ -72,7 +73,7 @@
   display: flex;
   gap: var(--space-3);
   align-items: flex-start;
-  line-height: 1.5;
+  font: var(--type-text-sm-medium);
   cursor: pointer;
 }
 
@@ -88,8 +89,7 @@
 .error {
   margin: 0 0 0 2.25rem;
   color: var(--color-danger);
-  font-size: 0.8125rem;
-  font-weight: 550;
+  font: var(--type-text-sm-regular);
 }
 
 .actions {

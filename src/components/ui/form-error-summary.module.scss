@@ -9,8 +9,7 @@
 .title {
   margin: 0 0 var(--space-2);
   color: inherit;
-  font-size: 1rem;
-  letter-spacing: 0;
+  font: var(--type-text-md-semibold);
 }
 
 .list {
@@ -18,5 +17,5 @@
   gap: var(--space-1);
   padding-inline-start: var(--space-5);
   margin: 0;
-  font-size: 0.875rem;
+  font: var(--type-text-sm-regular);
 }

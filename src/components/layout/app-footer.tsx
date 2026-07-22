@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { Logo } from "./logo";
 import styles from "./app-footer.module.scss";
+import { FacebookIcon, InstagramIcon } from "../ui/icons";
 
 export function AppFooter() {
   return (
@@ -14,14 +15,34 @@ export function AppFooter() {
       >
         <Logo />
       </Link>
-      <nav aria-label="Doplnkové stránky" className={styles.navigation}>
-        <Link href="/contact" prefetch={false}>
-          Kontakt
-        </Link>
-        <Link href="/about" prefetch={false}>
-          O projekte
-        </Link>
-      </nav>
+      <div className={styles.footerLinks}>
+        <nav aria-label="Sociálne siete" className={styles.socials}>
+          <a
+            aria-label="Facebook"
+            href="https://www.facebook.com/goodrequest"
+            rel="noreferrer"
+            target="_blank"
+          >
+            <FacebookIcon />
+          </a>
+          <a
+            aria-label="Instagram"
+            href="https://www.instagram.com/goodrequest"
+            rel="noreferrer"
+            target="_blank"
+          >
+            <InstagramIcon />
+          </a>
+        </nav>
+        <nav aria-label="Doplnkové stránky" className={styles.navigation}>
+          <Link href="/contact" prefetch={false}>
+            Kontakt
+          </Link>
+          <Link href="/about" prefetch={false}>
+            O projekte
+          </Link>
+        </nav>
+      </div>
     </footer>
   );
 }

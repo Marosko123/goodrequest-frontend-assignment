@@ -4,13 +4,15 @@
   display: grid;
   gap: var(--space-2);
   min-width: 0;
+
+  &:has(.input[aria-invalid="true"]) .label {
+    color: var(--color-danger-hover);
+  }
 }
 
 .label {
   color: var(--color-text);
-  font-size: 0.9375rem;
-  font-weight: 650;
-  line-height: 1.35;
+  font: var(--type-text-sm-medium);
 }
 
 .required {
@@ -27,6 +29,7 @@
   border: 1px solid transparent;
   background: var(--color-surface);
   color: var(--color-text);
+  font: var(--type-text-md-regular);
 
   &::placeholder {
     color: var(--color-text-muted);
@@ -38,14 +41,14 @@
   }
 
   &:focus-visible {
-    border-color: var(--color-primary);
+    border-color: var(--color-primary-pressed);
     background: var(--color-canvas);
     box-shadow: var(--shadow-focus);
     outline: none;
   }
 
   &[aria-invalid="true"] {
-    border-color: var(--color-danger);
+    border-color: var(--color-danger-hover);
     background: var(--color-danger-soft);
   }
 
@@ -59,8 +62,7 @@
 .hint,
 .error {
   margin: 0;
-  font-size: 0.8125rem;
-  line-height: 1.4;
+  font: var(--type-text-sm-regular);
 }
 
 .hint {
@@ -68,6 +70,5 @@
 }
 
 .error {
-  color: var(--color-danger);
-  font-weight: 550;
+  color: var(--color-danger-hover);
 }
