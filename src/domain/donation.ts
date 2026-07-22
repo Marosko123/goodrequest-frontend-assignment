@@ -1,6 +1,3 @@
-export const donationTargets = ["foundation", "shelter"] as const;
-export type DonationTarget = (typeof donationTargets)[number];
-
 export type Shelter = {
   id: number;
   name: string;

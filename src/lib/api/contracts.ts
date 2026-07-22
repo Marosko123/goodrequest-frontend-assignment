@@ -15,7 +15,14 @@ type GeneratedContributionRequest = NonNullable<
   paths["/api/v1/shelters/contribute"]["post"]["requestBody"]
 >["content"]["application/json"];
 
-type AssertAssignable<Contract, Value extends Contract> = Value;
+type GeneratedSheltersResponse = JsonResponse<"/api/v1/shelters/", "get">;
+type GeneratedResultsResponse = JsonResponse<"/api/v1/shelters/results", "get">;
+
+export type ContributionRequest = GeneratedContributionRequest;
+export type ContributionResponse = JsonResponse<
+  "/api/v1/shelters/contribute",
+  "post"
+>;
 
 const shelterSchema = z
   .object({
@@ -41,14 +48,14 @@ export const sheltersResponseSchema = z
       }
       ids.add(shelter.id);
     }
-  });
+  }) satisfies z.ZodType<GeneratedSheltersResponse>;
 
 export const resultsResponseSchema = z
   .object({
     contributors: z.number().int().nonnegative(),
     contribution: z.number().finite().nonnegative().nullable(),
   })
-  .strict();
+  .strict() satisfies z.ZodType<GeneratedResultsResponse>;
 
 const contributionMessageSchema = z
   .object({
@@ -61,7 +68,7 @@ export const contributionResponseSchema = z
   .object({
     messages: z.array(contributionMessageSchema),
   })
-  .strict();
+  .strict() satisfies z.ZodType<ContributionResponse>;
 
 export const contributionRequestSchema = z
   .object({
@@ -81,17 +88,3 @@ export const contributionRequestSchema = z
     value: z.number().finite().positive(),
   })
   .strict();
-
-export type SheltersResponse = AssertAssignable<
-  JsonResponse<"/api/v1/shelters/", "get">,
-  z.output<typeof sheltersResponseSchema>
->;
-export type ResultsResponse = AssertAssignable<
-  JsonResponse<"/api/v1/shelters/results", "get">,
-  z.output<typeof resultsResponseSchema>
->;
-export type ContributionRequest = GeneratedContributionRequest;
-export type ContributionResponse = AssertAssignable<
-  JsonResponse<"/api/v1/shelters/contribute", "post">,
-  z.output<typeof contributionResponseSchema>
->;

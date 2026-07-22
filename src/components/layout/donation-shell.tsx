@@ -28,7 +28,7 @@ export function DonationShell({
           alt="Mladý pes na pláži"
           className={styles.image}
           height={2048}
-          priority={currentStep === 1}
+          loading="eager"
           sizes="(max-width: 900px) 100vw, 42vw"
           src={donationDog}
           width={1365}

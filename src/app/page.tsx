@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 
 import { DonationShell } from "@/components/layout/donation-shell";
 import { SelectionPage } from "@/features/selection/selection-page";
+import { createPageMetadata } from "@/lib/site";
 
-export const metadata: Metadata = {
-  title: "Vyberte formu pomoci | GoodBoy",
+export const metadata: Metadata = createPageMetadata({
+  title: "Vyberte formu pomoci",
   description: "Podporte celú nadáciu GoodBoy alebo vybraný slovenský útulok.",
-};
+  path: "./",
+});
 
 export default function HomePage() {
   return (
