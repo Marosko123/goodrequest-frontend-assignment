@@ -1,0 +1,8 @@
+.next
+node_modules
+out
+coverage
+playwright-report
+pnpm-lock.yaml
+README.md
+placeholder/

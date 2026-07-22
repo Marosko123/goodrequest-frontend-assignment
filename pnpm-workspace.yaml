@@ -1,0 +1,11 @@
+packages:
+  - "."
+
+allowBuilds:
+  "@parcel/watcher": false
+  msw: false
+  sharp: true
+  unrs-resolver: false
+
+minimumReleaseAgeExclude:
+  - knip@6.29.0

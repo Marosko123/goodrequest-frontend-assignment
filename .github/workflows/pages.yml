@@ -12,7 +12,7 @@ on:
       - "src/**"
       - "public/**"
       - "package.json"
-      - "package-lock.json"
+      - "pnpm-lock.yaml"
       - "next.config.*"
       - "tsconfig.json"
       - "postcss.config.*"
@@ -41,11 +41,11 @@ jobs:
         id: preflight
         shell: bash
         run: |
-          if [[ -f package.json && -f package-lock.json ]]; then
+          if [[ -f package.json && -f pnpm-lock.yaml ]]; then
             echo "mode=next" >> "$GITHUB_OUTPUT"
             echo "artifact_path=out" >> "$GITHUB_OUTPUT"
-          elif [[ -f package.json || -f package-lock.json ]]; then
-            echo "Both package.json and package-lock.json are required for a Next.js build." >&2
+          elif [[ -f package.json || -f pnpm-lock.yaml ]]; then
+            echo "Both package.json and pnpm-lock.yaml are required for a Next.js build." >&2
             exit 1
           elif [[ -f placeholder/index.html ]]; then
             echo "mode=placeholder" >> "$GITHUB_OUTPUT"
@@ -55,13 +55,20 @@ jobs:
             exit 1
           fi
 
+      - name: Set up pnpm
+        if: steps.preflight.outputs.mode == 'next'
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          version: 11.15.1
+          run_install: false
+
       - name: Set up Node.js
         if: steps.preflight.outputs.mode == 'next'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: package-lock.json
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: Configure Pages
         if: steps.preflight.outputs.mode == 'next'
@@ -74,17 +81,19 @@ jobs:
         uses: actions/cache@a7833574556fa59680c1b7cb190c1735db73ebf0 # v5.0.0
         with:
           path: .next/cache
-          key: ${{ runner.os }}-node-24-nextjs-${{ hashFiles('package-lock.json') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx', '**.css', '**.json') }}
+          key: ${{ runner.os }}-node-24-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx', '**.css', '**.scss', '**.json') }}
           restore-keys: |
-            ${{ runner.os }}-node-24-nextjs-${{ hashFiles('package-lock.json') }}-
+            ${{ runner.os }}-node-24-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Install dependencies
         if: steps.preflight.outputs.mode == 'next'
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build static export
         if: steps.preflight.outputs.mode == 'next'
-        run: npm run build
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_BASE_PATH: /goodrequest-frontend-assignment
 
       - name: Verify Pages artifact
         run: test -f "${{ steps.preflight.outputs.artifact_path }}/index.html"

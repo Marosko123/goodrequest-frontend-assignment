@@ -17,7 +17,7 @@ Vytvoriť kvalitnú, responzívnu aplikáciu v Next.js a TypeScripte, ktorá umo
 
 ## Povinný technický základ
 
-- Next.js, TypeScript a npm s commitnutým `package-lock.json`.
+- Next.js, TypeScript a pnpm s commitnutým `pnpm-lock.yaml`.
 - TanStack Query pre serverový stav.
 - Samostatné riešenie klientského stavu, napríklad Context + reducer alebo Zustand.
 - Knižnica pre správu formulára, napríklad React Hook Form alebo Formik.
@@ -36,16 +36,16 @@ Vytvoriť kvalitnú, responzívnu aplikáciu v Next.js a TypeScripte, ktorá umo
 - Projektová Pages URL používa podcestu `/goodrequest-frontend-assignment`; odkazy a statické assety musia fungovať aj pod týmto `basePath`.
 - Funkcie vyžadujúce trvalý Next.js server, napríklad API routes, SSR alebo predvolená serverová optimalizácia obrázkov, sa nesmú použiť.
 - Dodané externé API sa volá z klienta cez TanStack Query. Do klientského buildu nesmú vstúpiť tajné hodnoty.
-- Workflow vykoná `npm ci`, `npm run build`, overí `out/index.html` a nasadí obsah `out/`.
+- Workflow vykoná `pnpm install --frozen-lockfile`, `pnpm build`, overí `out/index.html` a nasadí obsah `out/`.
 
 ## Akceptačné kritériá
 
 - Všetky povinné scenáre a podmienené validácie fungujú pri úspechu aj chybách API.
 - Ovládanie je použiteľné klávesnicou, má zrozumiteľné popisy a spätne väzby a funguje na mobile aj desktope.
 - Vizuál zodpovedá dodanému dizajnu a prechody nebránia používaniu.
-- Build je deterministický cez `npm ci`, prejde bez chýb a výsledný statický export funguje na GitHub Pages pod projektovou URL.
+- Build je deterministický cez frozen pnpm lockfile, prejde bez chýb a výsledný statický export funguje na GitHub Pages pod projektovou URL.
 - Voliteľné rozšírenia ako lokalizácia, Zod, SEO metadata či viacerí darcovia sa pridajú až po spoľahlivom dokončení povinného rozsahu.
 
 ## Aktuálny stav
 
-Repozitár v tejto fáze obsahuje iba statický placeholder bez závislostí a aplikačného scaffoldu. Po pridaní kompletného npm projektu workflow automaticky nasadí Next.js export namiesto placeholderu.
+Repozitár obsahuje produkčný Next.js scaffold. Po úspešnom frozen pnpm builde workflow nasadí statický export namiesto pôvodného placeholderu.
