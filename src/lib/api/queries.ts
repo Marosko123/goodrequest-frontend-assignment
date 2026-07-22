@@ -47,6 +47,7 @@ export const resultsQueryOptions = () =>
 export const contributionMutationOptions = () =>
   mutationOptions({
     mutationFn: submitContribution,
+    gcTime: 0,
     networkMode: "always",
     retry: 0,
   });

@@ -5,6 +5,8 @@ import "@fontsource-variable/inter";
 import "@mantine/core/styles.css";
 import "./globals.scss";
 
+import { AppProviders } from "./providers";
+
 export const metadata: Metadata = {
   title: "GoodBoy – Pomoc útulkom",
   description: "Podporte nadáciu GoodBoy alebo konkrétny slovenský útulok.",
@@ -15,7 +17,9 @@ export default function RootLayout({
 }: Readonly<{ children: ReactNode }>) {
   return (
     <html lang="sk">
-      <body>{children}</body>
+      <body>
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }
