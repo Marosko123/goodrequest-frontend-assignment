@@ -48,4 +48,4 @@ Vytvoriť kvalitnú, responzívnu aplikáciu v Next.js a TypeScripte, ktorá umo
 
 ## Aktuálny stav
 
-Repozitár obsahuje produkčný Next.js scaffold. Po úspešnom frozen pnpm builde workflow nasadí statický export namiesto pôvodného placeholderu.
+Repozitár obsahuje hotovú statickú Next.js aplikáciu s kompletným trojkrokovým flow, kontaktnou stránkou, stránkou o projekte, živými API dátami, testami a výkonnostnými limitmi. Workflow po úspešných kontrolách nasadí export `out/` na GitHub Pages; pôvodný placeholder už nie je súčasťou nasadzovaného artefaktu.
