@@ -8,9 +8,9 @@ type TextFieldProps = Omit<
 > & {
   id: string;
   label: string;
-  error?: string;
-  hint?: string;
-  wrapperClassName?: string;
+  error?: string | undefined;
+  hint?: string | undefined;
+  wrapperClassName?: string | undefined;
 };
 
 export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
