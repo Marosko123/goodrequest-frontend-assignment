@@ -12,8 +12,10 @@ on:
       - "src/**"
       - "e2e/**"
       - "public/**"
+      - "scripts/**"
       - "package.json"
       - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
       - "next.config.*"
       - "playwright.config.*"
       - "vitest.config.*"
@@ -86,6 +88,12 @@ jobs:
 
       - name: Run browser tests
         run: pnpm test:e2e
+
+      - name: Build performance artifact
+        run: pnpm build
+
+      - name: Check performance budgets
+        run: pnpm performance
 
   build:
     name: Build static site

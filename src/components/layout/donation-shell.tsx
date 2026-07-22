@@ -1,7 +1,8 @@
-import Image from "next/image";
 import type { ReactNode } from "react";
+import { preload } from "react-dom";
 
-import donationDog from "@/assets/donation-dog.jpg";
+import donationDogDesktop from "@/assets/donation-dog-desktop.webp";
+import donationDogMobile from "@/assets/donation-dog-mobile.webp";
 
 import { AppFooter } from "./app-footer";
 import { Stepper } from "./stepper";
@@ -14,6 +15,19 @@ export function DonationShell({
   children: ReactNode;
   currentStep: 1 | 2 | 3;
 }) {
+  preload(donationDogMobile.src, {
+    as: "image",
+    fetchPriority: "high",
+    media: "(max-width: 56rem)",
+    type: "image/webp",
+  });
+  preload(donationDogDesktop.src, {
+    as: "image",
+    fetchPriority: "high",
+    media: "(min-width: 56.001rem)",
+    type: "image/webp",
+  });
+
   return (
     <div className={styles.shell}>
       <div className={styles.contentColumn}>
@@ -24,15 +38,23 @@ export function DonationShell({
         <AppFooter />
       </div>
       <aside aria-label="Fotografia podporovaného psa" className={styles.media}>
-        <Image
-          alt="Mladý pes na pláži"
-          className={styles.image}
-          height={2048}
-          loading="eager"
-          sizes="(max-width: 900px) 100vw, 42vw"
-          src={donationDog}
-          width={1365}
-        />
+        <picture>
+          <source
+            media="(max-width: 56rem)"
+            srcSet={donationDogMobile.src}
+            type="image/webp"
+          />
+          <img
+            alt="Mladý pes na pláži"
+            className={styles.image}
+            decoding="async"
+            fetchPriority="high"
+            height={donationDogDesktop.height}
+            loading="eager"
+            src={donationDogDesktop.src}
+            width={donationDogDesktop.width}
+          />
+        </picture>
       </aside>
     </div>
   );

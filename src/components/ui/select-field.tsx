@@ -1,36 +1,75 @@
 "use client";
 
-import { Select, type SelectProps } from "@mantine/core";
+import { forwardRef, type SelectHTMLAttributes } from "react";
 
 import styles from "./select-field.module.scss";
 
-type SelectFieldProps = Omit<SelectProps, "classNames" | "error" | "label"> & {
+type SelectOption = {
   label: string;
-  error?: string | undefined;
+  value: string;
 };
 
-export function SelectField({
-  error,
-  label,
-  required,
-  ...selectProps
-}: SelectFieldProps) {
-  return (
-    <Select
-      {...selectProps}
-      classNames={{
-        label: styles.label!,
-        input: styles.input!,
-        error: styles.error!,
-        dropdown: styles.dropdown!,
-        option: styles.option!,
-      }}
-      {...(error ? { error } : {})}
-      label={label}
-      nothingFoundMessage="Nenašli sa žiadne útulky."
-      {...(required === undefined ? {} : { required })}
-      searchable
-      withCheckIcon
-    />
-  );
-}
+type SelectFieldProps = Omit<
+  SelectHTMLAttributes<HTMLSelectElement>,
+  "children" | "onChange" | "value"
+> & {
+  data: readonly SelectOption[];
+  label: string;
+  error?: string | undefined;
+  onChange: (value: string | null) => void;
+  placeholder: string;
+  value?: string | null | undefined;
+};
+
+export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
+  function SelectField(
+    {
+      data,
+      error,
+      id,
+      label,
+      onChange,
+      placeholder,
+      required,
+      value,
+      ...selectProps
+    },
+    ref,
+  ) {
+    const errorId = `${id}-error`;
+
+    return (
+      <div className={styles.field}>
+        <label className={styles.label} htmlFor={id}>
+          {label}
+          {required ? <span aria-hidden="true"> *</span> : null}
+        </label>
+        <select
+          {...selectProps}
+          aria-describedby={error ? errorId : undefined}
+          aria-invalid={error ? "true" : undefined}
+          className={styles.input}
+          id={id}
+          onChange={(event) => onChange(event.target.value || null)}
+          ref={ref}
+          required={required}
+          value={value ?? ""}
+        >
+          <option disabled value="">
+            {placeholder}
+          </option>
+          {data.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        {error ? (
+          <p className={styles.error} id={errorId}>
+            {error}
+          </p>
+        ) : null}
+      </div>
+    );
+  },
+);

@@ -1,3 +1,7 @@
+.field {
+  display: grid;
+}
+
 .label {
   margin-block-end: var(--space-2);
   color: var(--color-text);
@@ -6,7 +10,9 @@
 }
 
 .input {
+  width: 100%;
   height: var(--control-height);
+  padding-inline: var(--space-4);
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   background: var(--color-surface);
@@ -22,8 +28,7 @@
     background: var(--color-surface-hover);
   }
 
-  &:focus,
-  &:focus-within {
+  &:focus {
     border-color: var(--color-primary);
     background: var(--color-canvas);
     box-shadow: var(--shadow-focus);
@@ -41,21 +46,4 @@
   font-family: var(--font-sans);
   font-size: 0.8125rem;
   font-weight: 550;
-}
-
-.dropdown {
-  border-color: var(--color-border-subtle);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-card);
-  font-family: var(--font-sans);
-}
-
-.option {
-  min-height: 2.75rem;
-  border-radius: var(--radius-sm);
-
-  &[data-combobox-selected] {
-    background: var(--color-primary-soft);
-    color: var(--color-primary-pressed);
-  }
 }

@@ -1,4 +1,3 @@
-import { MantineProvider } from "@mantine/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -21,11 +20,9 @@ function renderForm(
   });
 
   render(
-    <MantineProvider>
-      <QueryClientProvider client={queryClient}>
-        <SelectionForm onComplete={onComplete} />
-      </QueryClientProvider>
-    </MantineProvider>,
+    <QueryClientProvider client={queryClient}>
+      <SelectionForm onComplete={onComplete} />
+    </QueryClientProvider>,
   );
 
   return onComplete;
@@ -47,8 +44,7 @@ describe("SelectionForm", () => {
       screen.getByRole("radio", { name: "Prispieť konkrétnemu útulku" }),
     );
     const select = await screen.findByRole("combobox", { name: "Útulok" });
-    await user.click(select);
-    await user.keyboard("{ArrowDown}{Enter}");
+    await user.selectOptions(select, "4");
     await user.click(screen.getByRole("button", { name: "50 €" }));
     await user.click(screen.getByRole("button", { name: "Pokračovať" }));
 

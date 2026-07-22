@@ -63,8 +63,7 @@ test("shelter selection remains consistent through review", async ({
     .getByRole("radio", { name: "Prispieť konkrétnemu útulku" })
     .check();
   const shelter = page.getByRole("combobox", { name: "Útulok" });
-  await shelter.click();
-  await page.getByRole("option", { name: "Žilinský útulok" }).click();
+  await shelter.selectOption({ label: "Žilinský útulok" });
   await page.getByRole("button", { name: "20 €" }).click();
   await page.getByRole("button", { name: "Pokračovať" }).click();
   await page.getByRole("textbox", { name: "Priezvisko" }).fill("Novák");

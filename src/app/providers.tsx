@@ -1,6 +1,5 @@
 "use client";
 
-import { MantineProvider } from "@mantine/core";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 
@@ -23,10 +22,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
   const [queryClient] = useState(createQueryClient);
 
   return (
-    <MantineProvider defaultColorScheme="light">
-      <QueryClientProvider client={queryClient}>
-        <DonationFlowProvider>{children}</DonationFlowProvider>
-      </QueryClientProvider>
-    </MantineProvider>
+    <QueryClientProvider client={queryClient}>
+      <DonationFlowProvider>{children}</DonationFlowProvider>
+    </QueryClientProvider>
   );
 }
