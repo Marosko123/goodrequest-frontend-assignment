@@ -1,8 +1,10 @@
 .next
+.worktrees
 node_modules
 out
 coverage
 playwright-report
+test-results
 pnpm-lock.yaml
 README.md
 placeholder/

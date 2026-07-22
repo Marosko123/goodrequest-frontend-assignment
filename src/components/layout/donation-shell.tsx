@@ -40,19 +40,19 @@ export function DonationShell({
       <aside aria-label="Fotografia podporovaného psa" className={styles.media}>
         <picture>
           <source
-            media="(max-width: 56rem)"
-            srcSet={donationDogMobile.src}
+            media="(min-width: 56.001rem)"
+            srcSet={donationDogDesktop.src}
             type="image/webp"
           />
           <img
             alt="Mladý pes na pláži"
             className={styles.image}
-            decoding="async"
+            decoding="sync"
             fetchPriority="high"
-            height={donationDogDesktop.height}
+            height={donationDogMobile.height}
             loading="eager"
-            src={donationDogDesktop.src}
-            width={donationDogDesktop.width}
+            src={donationDogMobile.src}
+            width={donationDogMobile.width}
           />
         </picture>
       </aside>

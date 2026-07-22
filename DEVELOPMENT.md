@@ -25,6 +25,8 @@ pnpm audit
 
 `pnpm performance` expects an existing production export in `out/`; run `pnpm build` first after application changes.
 
+The repeatable local HTTP/1.1 harness gates mobile Lighthouse Performance at 90 and guards LCP regressions above 3.5 s on shared CI hardware. The deployed HTTP/2 Pages site retains the production Core Web Vitals target of LCP at or below 2.5 s.
+
 ## Architecture
 
 | State                               | Owner             |

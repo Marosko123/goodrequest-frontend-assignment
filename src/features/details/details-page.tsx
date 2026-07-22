@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 import type { DonorDetails } from "@/domain/donation";
 import { useDonationFlow } from "@/features/donation-flow/context";
@@ -13,10 +12,6 @@ import styles from "./details-page.module.scss";
 export function DetailsPage() {
   const router = useRouter();
   const { state, dispatch } = useDonationFlow();
-
-  useEffect(() => {
-    router.prefetch("/review");
-  }, [router]);
 
   function completeDetails(donor: DonorDetails) {
     dispatch({ type: "donorCommitted", payload: donor });

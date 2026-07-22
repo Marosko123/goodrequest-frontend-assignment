@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 import type { DonationSelection } from "@/domain/donation";
 import { useDonationFlow } from "@/features/donation-flow/context";
@@ -12,10 +11,6 @@ import styles from "./selection-page.module.scss";
 export function SelectionPage() {
   const router = useRouter();
   const { state, dispatch } = useDonationFlow();
-
-  useEffect(() => {
-    router.prefetch("/details");
-  }, [router]);
 
   function completeSelection(selection: DonationSelection) {
     dispatch({ type: "selectionCommitted", payload: selection });

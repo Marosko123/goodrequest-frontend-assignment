@@ -21,7 +21,7 @@ export function SuccessContent() {
       </span>
       <h1>Ďakujeme za váš príspevok</h1>
       <p>Príspevok bol úspešne prijatý.</p>
-      <Link className={styles.link} href="/">
+      <Link className={styles.link} href="/" prefetch={false}>
         Prispieť znova
       </Link>
     </section>

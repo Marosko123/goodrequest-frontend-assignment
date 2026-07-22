@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:http";
 import { extname, resolve, sep } from "node:path";
 import { gzipSync } from "node:zlib";
@@ -10,10 +10,23 @@ import desktopConfig from "lighthouse/core/config/desktop-config.js";
 const host = "127.0.0.1";
 const port = 4175;
 const outputDirectory = resolve("out");
+const reportDirectory = resolve("test-results/lighthouse");
 const categories = ["performance", "accessibility", "best-practices", "seo"];
 const profiles = [
-  { name: "mobile", performance: 0.9, runs: 5, config: undefined },
-  { name: "desktop", performance: 0.95, runs: 3, config: desktopConfig },
+  {
+    name: "mobile",
+    performance: 0.9,
+    lcp: 3_500,
+    runs: 5,
+    config: undefined,
+  },
+  {
+    name: "desktop",
+    performance: 0.95,
+    lcp: 2_500,
+    runs: 3,
+    config: desktopConfig,
+  },
 ];
 const mimeTypes = {
   ".css": "text/css; charset=utf-8",
@@ -103,7 +116,9 @@ function assertBudget(profile, metrics) {
   if (metrics.accessibility < 1) failures.push("accessibility < 1");
   if (metrics.bestPractices < 0.95) failures.push("best-practices < 0.95");
   if (metrics.seo < 1) failures.push("seo < 1");
-  if (metrics.lcp > 2_500) failures.push(`LCP ${metrics.lcp}ms > 2500ms`);
+  if (metrics.lcp > profile.lcp) {
+    failures.push(`LCP ${metrics.lcp}ms > ${profile.lcp}ms`);
+  }
   if (metrics.tbt > 200) failures.push(`TBT ${metrics.tbt}ms > 200ms`);
   if (metrics.cls > 0.1) failures.push(`CLS ${metrics.cls} > 0.1`);
 
@@ -113,6 +128,7 @@ function assertBudget(profile, metrics) {
 }
 
 const server = createStaticServer();
+await mkdir(reportDirectory, { recursive: true });
 await new Promise((resolvePromise) =>
   server.listen(port, host, resolvePromise),
 );
@@ -139,6 +155,12 @@ try {
       if (result.lhr.runtimeError) {
         throw new Error(
           `${profile.name} Lighthouse runtime error: ${result.lhr.runtimeError.message}`,
+        );
+      }
+      if (typeof result.report === "string") {
+        await writeFile(
+          resolve(reportDirectory, `${profile.name}-${run + 1}.json`),
+          result.report,
         );
       }
       const runMetrics = getMetrics(result);
