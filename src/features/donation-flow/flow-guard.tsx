@@ -14,7 +14,7 @@ export function FlowGuard({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (redirect) {
-      router.replace(redirect);
+      router.replace(redirect, { scroll: false });
     }
   }, [redirect, router]);
 

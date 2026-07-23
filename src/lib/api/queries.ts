@@ -1,4 +1,8 @@
-import { mutationOptions, queryOptions } from "@tanstack/react-query";
+import {
+  mutationOptions,
+  type QueryClient,
+  queryOptions,
+} from "@tanstack/react-query";
 
 import {
   ApiError,
@@ -6,6 +10,8 @@ import {
   getShelters,
   submitContribution,
 } from "./client";
+import type { ContributionRequest } from "./contracts";
+import { assertContributionAccepted } from "./outcome";
 
 export const queryKeys = {
   shelters: ["shelters"] as const,
@@ -41,13 +47,23 @@ export const resultsQueryOptions = () =>
     queryFn: getResults,
     staleTime: 60 * 1000,
     gcTime: 10 * 60 * 1000,
+    refetchInterval: 60 * 1000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     retry: shouldRetryRead,
   });
 
-export const contributionMutationOptions = () =>
+export const contributionMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
-    mutationFn: submitContribution,
+    mutationFn: async (request: ContributionRequest) => {
+      const response = await submitContribution(request);
+      assertContributionAccepted(response);
+      return response;
+    },
     gcTime: 0,
     networkMode: "always",
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.results }),
     retry: 0,
   });

@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   basePath,
   assetPrefix: basePath,
   trailingSlash: true,
+  compiler: {
+    styledComponents: true,
+  },
   images: {
     unoptimized: true,
   },

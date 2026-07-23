@@ -2,8 +2,14 @@
 
 import { forwardRef, type SelectHTMLAttributes } from "react";
 
-import { ChevronDownIcon } from "./icons";
-import styles from "./select-field.module.scss";
+import {
+  Chevron,
+  Control,
+  ErrorMessage,
+  Field,
+  Label,
+  Select,
+} from "./select-field.styles";
 
 type SelectOption = {
   label: string;
@@ -40,17 +46,16 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
     const errorId = `${id}-error`;
 
     return (
-      <div className={styles.field}>
-        <label className={styles.label} htmlFor={id}>
+      <Field>
+        <Label htmlFor={id}>
           {label}
           {required ? <span aria-hidden="true"> *</span> : null}
-        </label>
-        <span className={styles.control}>
-          <select
+        </Label>
+        <Control>
+          <Select
             {...selectProps}
             aria-describedby={error ? errorId : undefined}
             aria-invalid={error ? "true" : undefined}
-            className={styles.input}
             data-empty={!value || undefined}
             data-size="xl"
             id={id}
@@ -67,15 +72,15 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
                 {option.label}
               </option>
             ))}
-          </select>
-          <ChevronDownIcon className={styles.chevron} />
-        </span>
+          </Select>
+          <Chevron />
+        </Control>
         {error ? (
-          <p className={styles.error} id={errorId}>
+          <ErrorMessage id={errorId} role="alert">
             {error}
-          </p>
+          </ErrorMessage>
         ) : null}
-      </div>
+      </Field>
     );
   },
 );

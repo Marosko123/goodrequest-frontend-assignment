@@ -11,6 +11,12 @@ const host = "127.0.0.1";
 const port = 4175;
 const outputDirectory = resolve("out");
 const reportDirectory = resolve("test-results/lighthouse");
+const exportHtml = await readFile(
+  resolve(outputDirectory, "index.html"),
+  "utf8",
+);
+const exportBasePath =
+  /(?:href|src)="([^"]*?)\/_next\//u.exec(exportHtml)?.[1] ?? "";
 const categories = ["performance", "accessibility", "best-practices", "seo"];
 const profiles = [
   {
@@ -61,6 +67,13 @@ function createStaticServer() {
     try {
       const requestUrl = new URL(request.url ?? "/", `http://${host}:${port}`);
       let pathname = decodeURIComponent(requestUrl.pathname);
+      if (exportBasePath) {
+        if (pathname === exportBasePath) {
+          pathname = "/";
+        } else if (pathname.startsWith(`${exportBasePath}/`)) {
+          pathname = pathname.slice(exportBasePath.length);
+        }
+      }
       if (pathname.endsWith("/")) pathname += "index.html";
 
       const filePath = resolve(outputDirectory, `.${pathname}`);
@@ -127,6 +140,25 @@ function assertBudget(profile, metrics) {
   }
 }
 
+function assertLocalResourcesLoaded(result) {
+  const origin = `http://${host}:${port}`;
+  const failedRequests =
+    result.lhr.audits["network-requests"].details?.items?.filter(
+      (item) =>
+        item.url.startsWith(origin) &&
+        typeof item.statusCode === "number" &&
+        item.statusCode >= 400,
+    ) ?? [];
+
+  if (failedRequests.length > 0) {
+    throw new Error(
+      `Local production resources failed: ${failedRequests
+        .map((item) => `${item.statusCode} ${item.url}`)
+        .join(", ")}`,
+    );
+  }
+}
+
 const server = createStaticServer();
 await mkdir(reportDirectory, { recursive: true });
 await new Promise((resolvePromise) =>
@@ -141,7 +173,7 @@ try {
     const runs = [];
     for (let run = 0; run < profile.runs; run += 1) {
       const result = await lighthouse(
-        `http://${host}:${port}/`,
+        `http://${host}:${port}${exportBasePath}/`,
         {
           logLevel: "error",
           onlyCategories: categories,
@@ -157,6 +189,7 @@ try {
           `${profile.name} Lighthouse runtime error: ${result.lhr.runtimeError.message}`,
         );
       }
+      assertLocalResourcesLoaded(result);
       if (typeof result.report === "string") {
         await writeFile(
           resolve(reportDirectory, `${profile.name}-${run + 1}.json`),

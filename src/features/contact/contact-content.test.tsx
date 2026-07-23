@@ -15,7 +15,7 @@ describe("ContactContent", () => {
     ).toHaveAttribute("href", "tel:+421911750750");
     expect(
       screen.getByRole("link", {
-        name: "Obchodná 3D, 010 08 Žilina, Slovakia",
+        name: "Obchodná 3D, 010 08 Žilina, Slovensko",
       }),
     ).toHaveAttribute("href", expect.stringContaining("google.com/maps"));
     expect(

@@ -1,20 +1,24 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { preload } from "react-dom";
+import { useTranslation } from "react-i18next";
 
 import donationDogDesktop from "@/assets/donation-dog-desktop.webp";
 import donationDogMobile from "@/assets/donation-dog-mobile.webp";
 
-import { AppFooter } from "./app-footer";
-import { Stepper } from "./stepper";
-import styles from "./donation-shell.module.scss";
+import { DonationFooter, DonationProgress } from "./donation-progress";
+import {
+  Content,
+  ContentColumn,
+  Header,
+  Media,
+  MediaImage,
+  Shell,
+} from "./donation-shell.styles";
 
-export function DonationShell({
-  children,
-  currentStep,
-}: {
-  children: ReactNode;
-  currentStep: 1 | 2 | 3;
-}) {
+export function DonationShell({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   preload(donationDogMobile.src, {
     as: "image",
     fetchPriority: "high",
@@ -29,24 +33,23 @@ export function DonationShell({
   });
 
   return (
-    <div className={styles.shell}>
-      <div className={styles.contentColumn}>
-        <header className={styles.header}>
-          <Stepper currentStep={currentStep} />
-        </header>
-        <main className={styles.content}>{children}</main>
-        <AppFooter />
-      </div>
-      <aside aria-label="Fotografia podporovaného psa" className={styles.media}>
+    <Shell>
+      <ContentColumn>
+        <Header>
+          <DonationProgress />
+        </Header>
+        <Content>{children}</Content>
+        <DonationFooter />
+      </ContentColumn>
+      <Media aria-label={t("media.dogPanel")}>
         <picture>
           <source
             media="(min-width: 56.001rem)"
             srcSet={donationDogDesktop.src}
             type="image/webp"
           />
-          <img
-            alt="Mladý pes na pláži"
-            className={styles.image}
+          <MediaImage
+            alt={t("media.donationDog")}
             decoding="sync"
             fetchPriority="high"
             height={donationDogMobile.height}
@@ -55,7 +58,7 @@ export function DonationShell({
             width={donationDogMobile.width}
           />
         </picture>
-      </aside>
-    </div>
+      </Media>
+    </Shell>
   );
 }

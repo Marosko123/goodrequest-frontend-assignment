@@ -1,48 +1,64 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useTranslation } from "react-i18next";
+
+import { getLocaleFromPathname, getLocalizedPath } from "@/i18n/config";
 
 import { Logo } from "./logo";
-import styles from "./app-footer.module.scss";
+import {
+  Footer,
+  FooterLinks,
+  HomeLink,
+  Navigation,
+  Socials,
+} from "./app-footer.styles";
 import { FacebookIcon, InstagramIcon } from "../ui/icons";
 
-export function AppFooter() {
+export function AppFooter({ showSocials = true }: { showSocials?: boolean }) {
+  const pathname = usePathname();
+  const { t } = useTranslation();
+  const locale = getLocaleFromPathname(pathname);
+
   return (
-    <footer className={styles.footer}>
-      <Link
-        aria-label="Good boy – domov"
-        className={styles.home}
-        href="/"
-        prefetch={false}
+    <Footer>
+      <HomeLink
+        aria-label={t("navigation.home")}
+        href={getLocalizedPath(locale, "/")}
       >
         <Logo />
-      </Link>
-      <div className={styles.footerLinks}>
-        <nav aria-label="Sociálne siete" className={styles.socials}>
-          <a
-            aria-label="Facebook"
-            href="https://www.facebook.com/goodrequest"
-            rel="noreferrer"
-            target="_blank"
-          >
-            <FacebookIcon />
-          </a>
-          <a
-            aria-label="Instagram"
-            href="https://www.instagram.com/goodrequest"
-            rel="noreferrer"
-            target="_blank"
-          >
-            <InstagramIcon />
-          </a>
-        </nav>
-        <nav aria-label="Doplnkové stránky" className={styles.navigation}>
-          <Link href="/contact" prefetch={false}>
-            Kontakt
+      </HomeLink>
+      <FooterLinks>
+        {showSocials ? (
+          <Socials aria-label={t("navigation.socials")}>
+            <a
+              aria-label="Facebook"
+              href="https://www.facebook.com/goodrequest"
+              rel="noreferrer"
+              target="_blank"
+            >
+              <FacebookIcon />
+            </a>
+            <a
+              aria-label="Instagram"
+              href="https://www.instagram.com/goodrequest"
+              rel="noreferrer"
+              target="_blank"
+            >
+              <InstagramIcon />
+            </a>
+          </Socials>
+        ) : null}
+        <Navigation aria-label={t("navigation.supplementary")}>
+          <Link href={getLocalizedPath(locale, "/contact/")}>
+            {t("common.contact")}
           </Link>
-          <Link href="/about" prefetch={false}>
-            O projekte
+          <Link href={getLocalizedPath(locale, "/about/")}>
+            {t("common.about")}
           </Link>
-        </nav>
-      </div>
-    </footer>
+        </Navigation>
+      </FooterLinks>
+    </Footer>
   );
 }

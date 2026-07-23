@@ -55,7 +55,7 @@ type ContributionResponse = {
 };
 ```
 
-The assignment makes first name optional, while the API requires the `firstName` key. An omitted first name is therefore mapped to an empty string. `shelterID` is omitted for a foundation contribution. Phone is omitted when empty and otherwise sent in E.164 format.
+The assignment makes first name optional, while the API requires the `firstName` key. An omitted first name is therefore mapped to an empty string. `shelterID` is omitted for a foundation contribution. The required Slovak or Czech phone is always sent in E.164 format. The local wire guard accepts exactly one contributor, integer shelter IDs and contribution values with at most cent precision up to €1,000,000.
 
 ## Runtime policy
 

@@ -19,11 +19,12 @@ pnpm check
 pnpm format:check
 pnpm deadcode
 pnpm test:e2e
+pnpm bundle:check
 pnpm performance
 pnpm audit
 ```
 
-`pnpm performance` expects an existing production export in `out/`; run `pnpm build` first after application changes.
+`pnpm bundle:check` and `pnpm performance` expect an existing production export in `out/`; run `pnpm build` first after application changes. The bundle gate compares the gzip sum of unique JavaScript chunks used by every route with the recorded pre-migration baseline.
 
 The repeatable local HTTP/1.1 harness gates mobile Lighthouse Performance at 90 and guards LCP regressions above 3.5 s on shared CI hardware. The deployed HTTP/2 Pages site retains the production Core Web Vitals target of LCP at or below 2.5 s.
 

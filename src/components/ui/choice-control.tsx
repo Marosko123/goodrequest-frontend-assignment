@@ -8,7 +8,7 @@ import {
   useRef,
 } from "react";
 
-import styles from "./choice-control.module.scss";
+import { ChoiceInput } from "./choice-control.styles";
 
 type ChoiceControlProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -37,9 +37,9 @@ export const ChoiceControl = forwardRef<HTMLInputElement, ChoiceControlProps>(
     }, [indeterminate]);
 
     return (
-      <input
+      <ChoiceInput
         {...inputProps}
-        className={[styles.control, className].filter(Boolean).join(" ")}
+        className={className}
         data-indeterminate={indeterminate || undefined}
         data-size={size}
         ref={inputRef}

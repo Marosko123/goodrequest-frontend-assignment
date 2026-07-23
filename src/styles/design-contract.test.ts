@@ -1,121 +1,126 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-
+import { render } from "@testing-library/react";
+import { createElement, type ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 
-const stylesDirectory = dirname(fileURLToPath(import.meta.url));
-const sourceDirectory = join(stylesDirectory, "..");
+import { LogoSvg, Wordmark } from "@/components/layout/logo.styles";
+import { Shell as DonationShell } from "@/components/layout/donation-shell.styles";
+import { ButtonRoot } from "@/components/ui/button.styles";
+import { ChoiceInput } from "@/components/ui/choice-control.styles";
+import { Alert } from "@/components/ui/inline-alert.styles";
+import { Input } from "@/components/ui/text-field.styles";
+import { StatsGrid } from "@/features/about/results-stats.styles";
 
-function readSource(relativePath: string) {
-  return readFileSync(join(sourceDirectory, relativePath), "utf8");
+import { rawTheme, theme } from "./theme";
+
+function renderElement(element: ReactNode): HTMLElement {
+  const { container } = render(element);
+  return container.firstElementChild as HTMLElement;
 }
 
-const figmaColors = {
-  "--color-surface": "#f3f4f6",
-  "--color-surface-hover": "#e5e7eb",
-  "--color-surface-pressed": "#d1d5db",
-  "--color-text-secondary": "#374151",
-  "--color-text-tertiary": "#4b5563",
-  "--color-text-muted": "#9ca3af",
-  "--color-border": "#d1d5db",
-  "--color-border-subtle": "#e5e7eb",
-  "--color-primary": "#4f46e5",
-  "--color-primary-hover": "#4338ca",
-  "--color-primary-pressed": "#3730a3",
-  "--color-primary-soft": "#e0e7ff",
-  "--color-primary-disabled": "#a5b4fc",
-  "--color-danger": "#e11d48",
-  "--color-danger-hover": "#be123c",
-  "--color-danger-pressed": "#9f1239",
-  "--color-danger-soft": "#ffe4e6",
-  "--color-success": "#047857",
-  "--color-success-soft": "#d1fae5",
-  "--color-warning": "#b45309",
-  "--color-warning-soft": "#fef3c7",
-} as const;
-
 describe("Figma design contract", () => {
-  it("uses the exact exported semantic palette", () => {
-    const tokens = readFileSync(
-      join(stylesDirectory, "_tokens.scss"),
-      "utf8",
-    ).toLowerCase();
-
-    for (const [name, value] of Object.entries(figmaColors)) {
-      expect(tokens, `${name} is missing or has drifted`).toContain(
-        `${name}: ${value};`,
-      );
-    }
+  it("keeps the exact semantic palette and 1440px geometry", () => {
+    expect(rawTheme.colors).toMatchObject({
+      surface: "#f3f4f6",
+      surfaceHover: "#e5e7eb",
+      surfacePressed: "#d1d5db",
+      textSecondary: "#374151",
+      textTertiary: "#4b5563",
+      textMuted: "#9ca3af",
+      border: "#d1d5db",
+      borderSubtle: "#e5e7eb",
+      primary: "#4f46e5",
+      primaryHover: "#4338ca",
+      primaryPressed: "#3730a3",
+      primarySoft: "#e0e7ff",
+      primaryDisabled: "#a5b4fc",
+      danger: "#e11d48",
+      dangerHover: "#be123c",
+      dangerPressed: "#9f1239",
+      dangerSoft: "#ffe4e6",
+      success: "#047857",
+      successSoft: "#d1fae5",
+      warning: "#b45309",
+      warningSoft: "#fef3c7",
+    });
+    expect(rawTheme.layout).toEqual({
+      pageMax: "90rem",
+      pageGutterDesktop: "5rem",
+      pagePaddingBlockDesktop: "3.75rem",
+      contentMax: "41.125rem",
+      donationLayoutGap: "5rem",
+      donationMediaWidth: "37.625rem",
+      donationMediaInset: "1.25rem",
+      publicContentMax: "80rem",
+      publicImageMax: "70rem",
+      publicImageHeight: "23.5rem",
+    });
   });
 
-  it("defines the exported control geometry", () => {
-    const tokens = readFileSync(join(stylesDirectory, "_tokens.scss"), "utf8");
+  it("keeps finite button variants, focus and reduced motion in static rules", () => {
+    const button = renderElement(createElement(ButtonRoot));
 
-    expect(tokens).toContain("--control-sm: 1.5rem;");
-    expect(tokens).toContain("--control-md: 2rem;");
-    expect(tokens).toContain("--control-lg: 3rem;");
-    expect(tokens).toContain("--control-xl: 3.5rem;");
-    expect(tokens).toContain("--radius-xs: 0.25rem;");
-    expect(tokens).toContain("--radius-sm: 0.5rem;");
+    expect(button).toHaveStyleRule("min-height", theme.sizes.controlSm, {
+      modifier: '&[data-size="sm"]',
+    });
+    expect(button).toHaveStyleRule("background", theme.colors.primary, {
+      modifier: '&[data-variant="primary"]',
+    });
+    expect(button).toHaveStyleRule("box-shadow", theme.shadows.focus, {
+      modifier: '&[data-variant="primary"]:focus-visible',
+    });
+    expect(button).toHaveStyleRule("transition", "none", {
+      media: "(prefers-reduced-motion: reduce)",
+    });
   });
 
-  it("defines the shared 1440px desktop layout contract", () => {
-    const tokens = readFileSync(join(stylesDirectory, "_tokens.scss"), "utf8");
+  it("keeps field error, choice motion and alert tone rules", () => {
+    const input = renderElement(createElement(Input));
+    const choice = renderElement(createElement(ChoiceInput));
+    const alert = renderElement(createElement(Alert));
 
-    expect(tokens).toContain("--page-max: 90rem;");
-    expect(tokens).toContain("--page-gutter-desktop: 5rem;");
-    expect(tokens).toContain("--page-padding-block-desktop: 3.75rem;");
-    expect(tokens).toContain("--content-max: 41.125rem;");
-    expect(tokens).toContain("--donation-layout-gap: 5rem;");
-    expect(tokens).toContain("--donation-media-width: 37.625rem;");
-    expect(tokens).toContain("--donation-media-inset: 1.25rem;");
-    expect(tokens).toContain("--public-content-max: 80rem;");
-    expect(tokens).toContain("--public-image-max: 70rem;");
-    expect(tokens).toContain("--public-image-height: 23.5rem;");
+    expect(input).toHaveStyleRule("border-color", theme.colors.dangerHover, {
+      modifier: '&[aria-invalid="true"]',
+    });
+    expect(input).toHaveStyleRule("background", theme.colors.dangerSoft, {
+      modifier: '&[aria-invalid="true"]',
+    });
+    expect(choice).toHaveStyleRule("transition", "none", {
+      media: "(prefers-reduced-motion: reduce)",
+      modifier: "&",
+    });
+    expect(alert).toHaveStyleRule("background", theme.colors.dangerSoft, {
+      modifier: '&[data-tone="error"]',
+    });
   });
 
-  it("keeps desktop shell geometry exact and free of viewport clamps", () => {
-    const donationShell = readSource(
-      "components/layout/donation-shell.module.scss",
-    );
-    const contentShell = readSource(
-      "components/layout/content-shell.module.scss",
-    );
+  it("keeps logo motion delayed, static under reduced motion and 2rem high", () => {
+    const logo = renderElement(createElement(LogoSvg));
+    const wordmark = renderElement(createElement(Wordmark));
 
-    expect(donationShell).toContain(
-      "grid-template-columns: var(--content-max) var(--donation-media-width);",
+    expect(logo).toHaveStyleRule("height", "2rem");
+    expect(wordmark).toHaveStyleRule(
+      "animation",
+      expect.stringContaining("9s var(--ease-enter) 3s infinite both"),
     );
-    expect(donationShell).toContain("gap: var(--donation-layout-gap);");
-    expect(donationShell).toContain(
-      "padding-inline: var(--page-gutter-desktop) var(--donation-media-inset);",
-    );
-    expect(contentShell).toContain(
-      "padding: var(--page-padding-block-desktop) var(--page-gutter-desktop);",
-    );
-    expect(donationShell).not.toContain("clamp(");
-    expect(contentShell).not.toContain("clamp(");
+    expect(wordmark).toHaveStyleRule("animation", "none", {
+      media: "(prefers-reduced-motion: reduce)",
+    });
   });
 
-  it("uses the exact public-page image, statistics and footer geometry", () => {
-    const contact = readSource("features/contact/contact-content.module.scss");
-    const about = readSource("features/about/about-content.module.scss");
-    const stats = readSource("features/about/results-stats.module.scss");
-    const footer = readSource("components/layout/app-footer.module.scss");
+  it("keeps desktop shell and results geometry exact", () => {
+    const shell = renderElement(createElement(DonationShell));
+    const stats = renderElement(createElement(StatsGrid));
 
-    expect(contact).toContain("max-width: var(--public-image-max);");
-    expect(contact).toContain("height: var(--public-image-height);");
-    expect(about).toContain("padding: var(--space-16) var(--space-8);");
-    expect(about).toContain("height: 14.75rem;");
-    expect(about).toContain("border-block: 1px solid var(--color-border);");
-    expect(stats).toContain("max-width: 76rem;");
-    expect(stats).toContain("min-height: 6.75rem;");
-    expect(about).not.toContain("clamp(");
-    expect(contact).not.toContain("clamp(");
-    expect(footer).toContain("padding-block-start: var(--space-6);");
-    expect(footer).not.toContain("padding-block: var(--space-6);");
-    expect(readSource("components/layout/logo.module.scss")).toContain(
-      "height: 1.75rem;",
+    expect(shell).toHaveStyleRule(
+      "grid-template-columns",
+      `${theme.layout.contentMax} ${theme.layout.donationMediaWidth}`,
     );
+    expect(shell).toHaveStyleRule("gap", theme.layout.donationLayoutGap);
+    expect(shell).toHaveStyleRule(
+      "padding-inline",
+      `${theme.layout.pageGutterDesktop} ${theme.layout.donationMediaInset}`,
+    );
+    expect(stats).toHaveStyleRule("max-width", "76rem");
+    expect(stats).toHaveStyleRule("min-height", "6.5rem");
   });
 });

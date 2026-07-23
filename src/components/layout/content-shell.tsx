@@ -1,19 +1,30 @@
-import Link from "next/link";
+"use client";
+
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+
+import { ArrowLeftIcon } from "@/components/ui/icons";
+import { getLocaleFromPathname, getLocalizedPath } from "@/i18n/config";
 
 import { AppFooter } from "./app-footer";
-import styles from "./content-shell.module.scss";
+import { BackLink, Header, Main, Shell } from "./content-shell.styles";
 
 export function ContentShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const { t } = useTranslation();
+  const locale = getLocaleFromPathname(pathname);
+
   return (
-    <div className={styles.shell}>
-      <header>
-        <Link className={styles.back} href="/" prefetch={false}>
-          <span aria-hidden="true">←</span> Späť
-        </Link>
-      </header>
-      <main>{children}</main>
-      <AppFooter />
-    </div>
+    <Shell>
+      <Header>
+        <BackLink href={getLocalizedPath(locale, "/")}>
+          <ArrowLeftIcon />
+          {t("common.back")}
+        </BackLink>
+      </Header>
+      <Main>{children}</Main>
+      <AppFooter showSocials={false} />
+    </Shell>
   );
 }

@@ -30,7 +30,8 @@ export function DonationFlowProvider({ children }: { children: ReactNode }) {
     donationFlowReducer,
     initialDonationFlowState,
   );
-  const value = useMemo(() => ({ state, dispatch }), [state]);
+
+  const value = useMemo(() => ({ state, dispatch }), [dispatch, state]);
 
   return <DonationFlowContext value={value}>{children}</DonationFlowContext>;
 }

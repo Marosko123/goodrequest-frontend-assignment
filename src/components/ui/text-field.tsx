@@ -1,6 +1,6 @@
 import { forwardRef, type InputHTMLAttributes } from "react";
 
-import styles from "./text-field.module.scss";
+import { ErrorMessage, Field, Hint, Input, Label } from "./text-field.styles";
 
 type TextFieldProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -24,41 +24,28 @@ export const TextField = forwardRef<HTMLInputElement, TextFieldProps>(
     ]
       .filter(Boolean)
       .join(" ");
-    const wrapperClasses = [styles.field, wrapperClassName]
-      .filter(Boolean)
-      .join(" ");
-
     return (
-      <div className={wrapperClasses}>
-        <label className={styles.label} htmlFor={id}>
+      <Field className={wrapperClassName}>
+        <Label htmlFor={id}>
           {label}
-          {required ? (
-            <span aria-hidden="true" className={styles.required}>
-              *
-            </span>
-          ) : null}
-        </label>
-        <input
+          {required ? <span aria-hidden="true"> *</span> : null}
+        </Label>
+        <Input
           {...inputProps}
           aria-describedby={describedBy || undefined}
           aria-invalid={error ? "true" : undefined}
-          className={styles.input}
           data-size="xl"
           id={id}
           ref={ref}
           required={required}
         />
-        {hint ? (
-          <p className={styles.hint} id={`${id}-hint`}>
-            {hint}
-          </p>
-        ) : null}
+        {hint ? <Hint id={`${id}-hint`}>{hint}</Hint> : null}
         {error ? (
-          <p className={styles.error} id={`${id}-error`} role="alert">
+          <ErrorMessage id={`${id}-error`} role="alert">
             {error}
-          </p>
+          </ErrorMessage>
         ) : null}
-      </div>
+      </Field>
     );
   },
 );

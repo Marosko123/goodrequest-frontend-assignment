@@ -1,6 +1,11 @@
 import type { ReactNode } from "react";
 
-import styles from "./inline-alert.module.scss";
+import {
+  Alert,
+  AlertAction,
+  AlertBody,
+  AlertTitle,
+} from "./inline-alert.styles";
 
 type AlertTone = "error" | "info" | "success" | "warning";
 
@@ -16,16 +21,16 @@ export function InlineAlert({
   action?: ReactNode;
 }) {
   return (
-    <div
-      className={styles.alert}
+    <Alert
+      aria-label={title}
       data-tone={tone}
       role={tone === "error" ? "alert" : "status"}
     >
       <div>
-        <strong className={styles.title}>{title}</strong>
-        <div className={styles.body}>{children}</div>
+        <AlertTitle>{title}</AlertTitle>
+        <AlertBody>{children}</AlertBody>
       </div>
-      {action ? <div className={styles.action}>{action}</div> : null}
-    </div>
+      {action ? <AlertAction>{action}</AlertAction> : null}
+    </Alert>
   );
 }

@@ -16,9 +16,10 @@ function renderStats(children: ReactNode = <ResultsStats />) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retryDelay: 0 } },
   });
-  return render(
+  const view = render(
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>,
   );
+  return { ...view, queryClient };
 }
 
 describe("ResultsStats", () => {
@@ -31,7 +32,7 @@ describe("ResultsStats", () => {
 
     renderStats();
 
-    expect(await screen.findByText("12 200,00 €")).toBeVisible();
+    expect(await screen.findByText("12 200 €")).toBeVisible();
     expect(screen.getByText("1 028")).toBeVisible();
     expect(screen.getByText("Celková vyzbieraná hodnota")).toBeVisible();
   });
@@ -53,7 +54,45 @@ describe("ResultsStats", () => {
     succeeds = true;
     await userEvent.click(screen.getByRole("button", { name: "Skúsiť znova" }));
 
-    expect(await screen.findByText("75,00 €")).toBeVisible();
+    expect(await screen.findByText("75 €")).toBeVisible();
     expect(screen.getByText("8")).toBeVisible();
+  });
+
+  it("keeps the last successful values when a background refresh fails", async () => {
+    let response: "initial" | "error" | "updated" = "initial";
+    server.use(
+      http.get(resultsUrl, () => {
+        if (response === "error") {
+          return HttpResponse.json({}, { status: 400 });
+        }
+
+        return HttpResponse.json(
+          response === "updated"
+            ? { contributors: 9, contribution: 80 }
+            : { contributors: 8, contribution: 75 },
+        );
+      }),
+    );
+    const { queryClient } = renderStats();
+
+    expect(await screen.findByText("75 €")).toBeVisible();
+    response = "error";
+    await queryClient.refetchQueries({ queryKey: ["results"] });
+
+    expect(screen.getByText("75 €")).toBeVisible();
+    expect(screen.getByText("8")).toBeVisible();
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Štatistiky sa nepodarilo aktualizovať",
+    );
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Zobrazujeme posledné úspešne načítané hodnoty.",
+    );
+
+    response = "updated";
+    await userEvent.click(screen.getByRole("button", { name: "Skúsiť znova" }));
+
+    expect(await screen.findByText("80 €")).toBeVisible();
+    expect(screen.getByText("9")).toBeVisible();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
   });
 });

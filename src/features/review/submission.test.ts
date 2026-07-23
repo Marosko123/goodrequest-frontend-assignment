@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { ApiError } from "@/lib/api/client";
+import { assertContributionAccepted } from "@/lib/api/outcome";
 
-import { assertContributionAccepted, getSubmissionError } from "./submission";
+import { getSubmissionError } from "./submission";
 
 describe("submission outcome", () => {
   it("accepts only a response with no error and an explicit success", () => {
@@ -29,19 +30,25 @@ describe("submission outcome", () => {
 
   it("distinguishes offline and unknown request outcomes", () => {
     expect(
-      getSubmissionError(new ApiError("network", "offline"), false),
-    ).toMatchObject({ kind: "offline" });
+      getSubmissionError(new ApiError("network", "interrupted")),
+    ).toMatchObject({ kind: "unknown" });
     expect(
-      getSubmissionError(new ApiError("timeout", "timeout"), true),
+      getSubmissionError(new ApiError("timeout", "timeout")),
+    ).toMatchObject({ kind: "unknown" });
+    expect(
+      getSubmissionError(new ApiError("http", "server", 503)),
+    ).toMatchObject({ kind: "unknown" });
+    expect(
+      getSubmissionError(new ApiError("contract", "bad response")),
     ).toMatchObject({ kind: "unknown" });
   });
 
   it("gives useful feedback for rate limits and invalid data", () => {
+    expect(getSubmissionError(new ApiError("http", "rate", 429))).toMatchObject(
+      { kind: "rate-limit" },
+    );
     expect(
-      getSubmissionError(new ApiError("http", "rate", 429), true),
-    ).toMatchObject({ kind: "rate-limit" });
-    expect(
-      getSubmissionError(new ApiError("http", "invalid", 422), true),
+      getSubmissionError(new ApiError("http", "invalid", 422)),
     ).toMatchObject({ kind: "invalid" });
   });
 });

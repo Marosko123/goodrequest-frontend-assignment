@@ -12,7 +12,7 @@ The supplied PDF exports are the visual source of truth until node-level Figma i
 | Shelters, statistics, submission status | TanStack Query    |
 | Open control and focus state            | Local React state |
 
-The reducer stores only `selection` and `donor` snapshots. Refresh deliberately resets the flow; personal data is not persisted.
+The reducer stores validated `selection` and `donor` snapshots, current step drafts and an explicit accepted-submission flag. Refresh deliberately resets the flow; personal data is not persisted in browser storage.
 
 ## Static deployment
 
@@ -34,5 +34,7 @@ The lockfile temporarily overrides Next.js optional `sharp`, build-time `postcss
 
 - Context + reducer is sufficient for the bounded three-step workflow; Zustand or Redux would duplicate form state.
 - Native controls are preferred. A measured audit removed the single Mantine select because its client and CSS cost was disproportionate to a short shelter list.
-- CSS Modules, SCSS and CSS custom properties replace styled-components for a smaller static client bundle.
-- Localization, multiple donors, Storybook, analytics, persistence and decorative animation libraries remain outside the core scope.
+- Styling uses `styled-components@6.4.4` with the Next.js SWC transform and native React Server Component support. Static typed tokens emit the existing CSS custom-property contract without a runtime `ThemeProvider`; finite variants use `data-*` selectors and user-derived values stay in CSS custom properties.
+- Server Components emit their styles through the native v6.4 RSC path. The interactive form tree uses the minimal Next.js SSR sheet collector so its Client Component rules are present in the static HTML before hydration and when JavaScript is unavailable.
+- Styled declarations and keyframes live at module scope in co-located `*.styles.ts` files. The static export is protected by a per-route gzip gate that allows at most 25,600 bytes of JavaScript growth from the pre-migration baseline.
+- Multiple donors, Storybook, analytics, persistence and decorative animation libraries remain outside the core scope. Slovak and English localization are part of the implemented flow.

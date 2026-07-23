@@ -1,41 +1,53 @@
-import styles from "./stepper.module.scss";
+"use client";
+
+import { useTranslation } from "react-i18next";
+
+import {
+  Step,
+  StepLabel,
+  StepLine,
+  StepList,
+  StepNumber,
+  StepperNav,
+} from "./stepper.styles";
 import { CheckIcon } from "../ui/icons";
-
-type DonationStep = 1 | 2 | 3;
-
-const steps: ReadonlyArray<{ number: DonationStep; label: string }> = [
-  { number: 1, label: "Výber útulku" },
-  { number: 2, label: "Osobné údaje" },
-  { number: 3, label: "Potvrdenie" },
-];
+import type { DonationStep } from "./donation-step";
 
 export function Stepper({ currentStep }: { currentStep: DonationStep }) {
+  const { t } = useTranslation();
+  const steps: ReadonlyArray<{ number: DonationStep; label: string }> = [
+    { number: 1, label: t("steps.selection") },
+    { number: 2, label: t("steps.details") },
+    { number: 3, label: t("steps.review") },
+  ];
+
   return (
-    <nav aria-label="Priebeh príspevku" className={styles.stepper}>
-      <ol aria-label="Priebeh príspevku" className={styles.list}>
+    <StepperNav aria-label={t("steps.progress")}>
+      <StepList aria-label={t("steps.progress")}>
         {steps.map((step) => {
           const isCurrent = step.number === currentStep;
           const isComplete = step.number < currentStep;
 
           return (
-            <li
+            <Step
               aria-current={isCurrent ? "step" : undefined}
-              className={styles.step}
               data-complete={isComplete || undefined}
               data-current={isCurrent || undefined}
               key={step.number}
             >
-              <span aria-hidden="true" className={styles.number}>
-                {isComplete ? <CheckIcon /> : step.number}
-              </span>
-              <span className={styles.label}>{step.label}</span>
-              {step.number < 3 ? (
-                <span aria-hidden="true" className={styles.line} />
-              ) : null}
-            </li>
+              <StepNumber aria-hidden="true">
+                {isComplete ? (
+                  <CheckIcon data-motion="step-check" />
+                ) : (
+                  step.number
+                )}
+              </StepNumber>
+              <StepLabel>{step.label}</StepLabel>
+              {step.number < 3 ? <StepLine aria-hidden="true" /> : null}
+            </Step>
           );
         })}
-      </ol>
-    </nav>
+      </StepList>
+    </StepperNav>
   );
 }

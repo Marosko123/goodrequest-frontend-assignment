@@ -1,13 +1,32 @@
+import type { TFunction } from "i18next";
 import { z } from "zod";
 
 import type { DonationSelection, Shelter } from "@/domain/donation";
 
-import { parseAmountToCents } from "./amount";
+import { parseDonationAmount, type AmountErrorCode } from "./amount";
 
-export const amountErrorMessage =
-  "Zadajte kladnú sumu najviac na dve desatinné miesta.";
+export function getAmountErrorMessage(
+  code: AmountErrorCode,
+  t: TFunction,
+): string {
+  switch (code) {
+    case "empty":
+      return t("selection.amountErrorEmpty");
+    case "nonPositive":
+      return t("selection.amountErrorNonPositive");
+    case "precision":
+      return t("selection.amountErrorPrecision");
+    case "tooLarge":
+      return t("selection.amountErrorTooLarge");
+    case "format":
+      return t("selection.amountErrorFormat");
+  }
+}
 
-export function createSelectionSchema(shelters: readonly Shelter[]) {
+export function createSelectionSchema(
+  shelters: readonly Shelter[],
+  t: TFunction,
+) {
   return z
     .object({
       target: z.enum(["foundation", "shelter"]),
@@ -15,15 +34,16 @@ export function createSelectionSchema(shelters: readonly Shelter[]) {
       amount: z.string(),
     })
     .transform((values, context): DonationSelection => {
-      const amountCents = parseAmountToCents(values.amount);
-      if (amountCents === null) {
+      const amountResult = parseDonationAmount(values.amount);
+      if (!amountResult.ok) {
         context.addIssue({
           code: "custom",
-          message: amountErrorMessage,
+          message: getAmountErrorMessage(amountResult.code, t),
           path: ["amount"],
         });
         return z.NEVER;
       }
+      const amountCents = amountResult.cents;
 
       if (values.target === "foundation") {
         return { target: "foundation", amountCents };
@@ -34,7 +54,7 @@ export function createSelectionSchema(shelters: readonly Shelter[]) {
       if (!values.shelterId || !shelter) {
         context.addIssue({
           code: "custom",
-          message: "Vyberte útulok zo zoznamu.",
+          message: t("selection.shelterError"),
           path: ["shelterId"],
         });
         return z.NEVER;

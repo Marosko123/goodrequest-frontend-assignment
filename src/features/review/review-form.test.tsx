@@ -1,4 +1,11 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import i18next from "i18next";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -36,8 +43,6 @@ function renderForm({
     <ReviewForm
       donor={donor}
       onBack={vi.fn()}
-      onEditDetails={vi.fn()}
-      onEditSelection={vi.fn()}
       onSuccess={onSuccess}
       selection={selection}
       submit={submit}
@@ -49,20 +54,25 @@ function renderForm({
 describe("ReviewForm", () => {
   it("shows a domain-consistent summary for both contribution targets", () => {
     const { unmount } = renderForm();
-    expect(screen.getByText("Celá nadácia GoodBoy")).toBeInTheDocument();
+    expect(
+      screen.getByText("Finančný príspevok celej nadácii"),
+    ).toBeInTheDocument();
     expect(screen.queryByText("Žilinský útulok")).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "Upraviť" }),
+    ).not.toBeInTheDocument();
     unmount();
 
     renderForm({ selection: shelterSelection });
     expect(screen.getByText("Žilinský útulok")).toBeInTheDocument();
-    expect(screen.getByText("20,00 €")).toBeInTheDocument();
+    expect(screen.getByText("20 €")).toBeInTheDocument();
   });
 
   it("requires consent and focuses it before submission", async () => {
     const { submit } = renderForm();
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole("button", { name: "Odoslať príspevok" }));
+    await user.click(screen.getByRole("button", { name: "Odoslať formulár" }));
 
     expect(screen.getByRole("checkbox", { name: /súhlasím/i })).toHaveFocus();
     expect(submit).not.toHaveBeenCalled();
@@ -98,16 +108,34 @@ describe("ReviewForm", () => {
     const user = userEvent.setup();
 
     await user.click(screen.getByRole("checkbox", { name: /súhlasím/i }));
-    await user.click(screen.getByRole("button", { name: "Odoslať príspevok" }));
+    await user.click(screen.getByRole("button", { name: "Odoslať formulár" }));
 
     expect(
       await screen.findByText(/výsledok odoslania nepoznáme/i),
     ).toBeVisible();
+    expect(screen.getByText(/duplicitný príspevok/i)).toBeVisible();
     expect(submit).toHaveBeenCalledTimes(1);
     expect(onSuccess).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: "Skúsiť znova" }));
+    await act(() => i18next.changeLanguage("en"));
+    expect(screen.getByText("The submission outcome is unknown")).toBeVisible();
+    expect(submit).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: "Submit again" }));
     await waitFor(() => expect(submit).toHaveBeenCalledTimes(2));
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+  });
+
+  it("does not dispatch a request while the browser is already offline", async () => {
+    const submit = vi.fn().mockResolvedValue(acceptedResponse);
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
+    renderForm({ submit });
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole("checkbox", { name: /súhlasím/i }));
+    await user.click(screen.getByRole("button", { name: "Odoslať formulár" }));
+
+    expect(await screen.findByText("Ste offline")).toBeVisible();
+    expect(submit).not.toHaveBeenCalled();
   });
 });

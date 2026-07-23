@@ -25,5 +25,13 @@ describe("Stepper", () => {
       "data-icon",
       "check",
     );
+    expect(completedStep!.querySelector("svg")).toHaveAttribute(
+      "data-motion",
+      "step-check",
+    );
+    expect(completedStep!.querySelector("path")).toHaveAttribute(
+      "stroke",
+      "currentColor",
+    );
   });
 });

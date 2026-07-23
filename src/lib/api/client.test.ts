@@ -79,7 +79,12 @@ describe("assignment API client", () => {
 
     const request = {
       contributors: [
-        { firstName: "", lastName: "Nováková", email: "jana@example.sk" },
+        {
+          firstName: "",
+          lastName: "Nováková",
+          email: "jana@example.sk",
+          phone: "+421901234567",
+        },
       ],
       value: 10,
     };

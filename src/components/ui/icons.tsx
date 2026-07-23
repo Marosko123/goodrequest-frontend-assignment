@@ -69,10 +69,40 @@ export function CheckIcon(props: IconProps) {
       {...iconProps(props)}
       data-icon="check"
       fill="none"
-      viewBox="344 406 16 12"
+      viewBox="0 0 16 12"
     >
       <path
-        d="M359.144 406.25H357.895C357.72 406.25 357.554 406.33 357.447 406.468L350.085 415.795L346.554 411.321C346.501 411.254 346.433 411.199 346.355 411.161C346.278 411.123 346.193 411.104 346.106 411.104H344.858C344.738 411.104 344.672 411.241 344.745 411.334L349.637 417.53C349.865 417.82 350.304 417.82 350.535 417.53L359.256 406.479C359.329 406.388 359.263 406.25 359.144 406.25Z"
+        d="M1 6.25 5.25 10.5 15 1"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
+export function SuccessCheckIcon(props: IconProps) {
+  return (
+    <svg {...iconProps(props)} data-icon="success-check" viewBox="0 0 64 64">
+      <circle cx="32" cy="32" fill="currentColor" opacity="0.14" r="32" />
+      <path
+        d="m18 32 9 9 19-20"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="4"
+      />
+    </svg>
+  );
+}
+
+export function PawIcon(props: IconProps) {
+  return (
+    <svg {...iconProps(props)} data-icon="paw" viewBox="0 0 24 24">
+      <path
+        d="M12 10.7c-3.6 0-6.5 3.1-6.5 6.1 0 2.3 1.8 3.7 4 3.1.9-.3 1.7-.8 2.5-.8s1.6.5 2.5.8c2.2.6 4-.8 4-3.1 0-3-2.9-6.1-6.5-6.1ZM5.6 9.7c1.3-.4 1.8-2.1 1.2-3.8S4.7 3.2 3.4 3.7 1.6 5.8 2.2 7.5s2.1 2.7 3.4 2.2Zm4.3-1.4c1.4 0 2.5-1.7 2.5-3.8S11.3.7 9.9.7 7.4 2.4 7.4 4.5s1.1 3.8 2.5 3.8Zm8.5 1.4c1.3.5 2.8-.5 3.4-2.2s.1-3.3-1.2-3.8-2.8.5-3.4 2.2-.1 3.4 1.2 3.8Zm-4.3-1.4c1.4 0 2.5-1.7 2.5-3.8S15.5.7 14.1.7s-2.5 1.7-2.5 3.8 1.1 3.8 2.5 3.8Z"
         fill="currentColor"
       />
     </svg>

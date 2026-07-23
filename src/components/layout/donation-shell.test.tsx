@@ -1,12 +1,20 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { DonationShell } from "./donation-shell";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/details/",
+  useRouter: () => ({
+    prefetch: vi.fn(),
+    replace: vi.fn(),
+  }),
+}));
 
 describe("DonationShell", () => {
   it("provides the shared stepper, artwork and footer navigation", () => {
     render(
-      <DonationShell currentStep={1}>
+      <DonationShell>
         <h1>Obsah kroku</h1>
       </DonationShell>,
     );
@@ -17,6 +25,10 @@ describe("DonationShell", () => {
     expect(
       screen.getByRole("img", { name: "Mladý pes na pláži" }),
     ).toBeInTheDocument();
+    expect(screen.getByText("Osobné údaje").closest("li")).toHaveAttribute(
+      "aria-current",
+      "step",
+    );
     expect(screen.getByRole("link", { name: "Kontakt" })).toHaveAttribute(
       "href",
       "/contact",

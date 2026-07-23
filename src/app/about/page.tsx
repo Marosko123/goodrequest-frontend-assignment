@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 
 import { ContentShell } from "@/components/layout/content-shell";
 import { AboutContent } from "@/features/about/about-content";
+import { createTranslator } from "@/i18n/instance";
 import { createPageMetadata } from "@/lib/site";
 
+const t = createTranslator("sk");
+
 export const metadata: Metadata = createPageMetadata({
-  title: "O projekte",
-  description: "Poslanie nadácie Good Boy a jej aktuálne výsledky.",
+  locale: "sk",
+  title: t("seo.aboutTitle"),
+  description: t("seo.aboutDescription"),
   path: "about/",
 });
 

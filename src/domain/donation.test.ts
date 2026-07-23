@@ -7,12 +7,12 @@ const donor: DonorDetails = {
   firstName: "",
   lastName: "Nováková",
   email: "jana@example.sk",
-  phoneE164: null,
-  phoneCountry: null,
+  phoneE164: "+421901234567",
+  phoneCountry: "SK",
 };
 
 describe("mapContributionRequest", () => {
-  it("omits shelter and optional phone for a foundation contribution", () => {
+  it("maps the required phone for a foundation contribution", () => {
     const selection: DonationSelection = {
       target: "foundation",
       amountCents: 1050,
@@ -24,6 +24,7 @@ describe("mapContributionRequest", () => {
           firstName: "",
           lastName: "Nováková",
           email: "jana@example.sk",
+          phone: "+421901234567",
         },
       ],
       value: 10.5,
@@ -58,14 +59,17 @@ describe("mapContributionRequest", () => {
     });
   });
 
-  it("rejects a non-positive or fractional cent amount", () => {
-    const invalidSelection: DonationSelection = {
-      target: "foundation",
-      amountCents: 10.5,
-    };
+  it.each([0, -1, 10.5, 100_000_001])(
+    "rejects an out-of-contract amount of %s cents",
+    (amountCents) => {
+      const invalidSelection: DonationSelection = {
+        target: "foundation",
+        amountCents,
+      };
 
-    expect(() => mapContributionRequest(invalidSelection, donor)).toThrow(
-      "Contribution amount must use positive whole cents.",
-    );
-  });
+      expect(() => mapContributionRequest(invalidSelection, donor)).toThrow(
+        "Contribution amount is outside the supported cent range.",
+      );
+    },
+  );
 });

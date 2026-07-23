@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { MAX_DONATION_CENTS } from "@/domain/donation";
+
 import type { paths } from "./generated";
 
 type JsonResponse<
@@ -79,12 +81,17 @@ export const contributionRequestSchema = z
             firstName: z.string(),
             lastName: z.string().min(1),
             email: z.email(),
-            phone: z.string().optional(),
+            phone: z.string().regex(/^\+(?:420|421)\d{9}$/u),
           })
           .strict(),
       )
-      .min(1),
-    shelterID: z.number().positive().optional(),
-    value: z.number().finite().positive(),
+      .length(1),
+    shelterID: z.number().int().positive().optional(),
+    value: z
+      .number()
+      .finite()
+      .positive()
+      .multipleOf(0.01)
+      .max(MAX_DONATION_CENTS / 100),
   })
   .strict();

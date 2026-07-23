@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 import "@fontsource-variable/inter";
-import "./globals.scss";
 
+import { createTranslator } from "@/i18n/instance";
 import { siteUrl } from "@/lib/site";
+import { GlobalStyles } from "@/styles/global-styles";
 
 import { AppProviders } from "./providers";
+import { StyledComponentsRegistry } from "./styled-components-registry";
 
 const productionContentSecurityPolicy = [
   "default-src 'self'",
@@ -20,35 +22,37 @@ const productionContentSecurityPolicy = [
   "form-action 'self'",
 ].join("; ");
 
+const t = createTranslator("sk");
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "GoodBoy – Pomoc útulkom",
+    default: t("seo.siteTitle"),
     template: "%s | GoodBoy",
   },
-  description: "Podporte nadáciu GoodBoy alebo konkrétny slovenský útulok.",
+  description: t("seo.siteDescription"),
   applicationName: "GoodBoy",
   authors: [{ name: "GoodBoy" }],
   openGraph: {
     type: "website",
     locale: "sk_SK",
     siteName: "GoodBoy",
-    title: "GoodBoy – Pomoc útulkom",
-    description: "Podporte nadáciu GoodBoy alebo konkrétny slovenský útulok.",
+    title: t("seo.siteTitle"),
+    description: t("seo.siteDescription"),
     url: "./",
     images: [
       {
         url: "og-image.png",
         width: 1200,
         height: 630,
-        alt: "GoodBoy – pomoc psom a útulkom",
+        alt: t("seo.imageAlt"),
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "GoodBoy – Pomoc útulkom",
-    description: "Podporte nadáciu GoodBoy alebo konkrétny slovenský útulok.",
+    title: t("seo.siteTitle"),
+    description: t("seo.siteDescription"),
     images: ["og-image.png"],
   },
 };
@@ -57,17 +61,27 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <html data-scroll-behavior="smooth" lang="sk">
-      {process.env.NODE_ENV === "production" ? (
-        <head>
+    <html data-scroll-behavior="smooth" lang="sk" suppressHydrationWarning>
+      <head>
+        {process.env.NODE_ENV === "production" ? (
           <meta
             content={productionContentSecurityPolicy}
             httpEquiv="Content-Security-Policy"
           />
-        </head>
-      ) : null}
+        ) : null}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'document.documentElement.lang=/(?:^|\\/)en(?:\\/|$)/.test(location.pathname)?"en":"sk";',
+          }}
+          id="document-locale"
+        />
+      </head>
       <body>
-        <AppProviders>{children}</AppProviders>
+        <GlobalStyles />
+        <StyledComponentsRegistry>
+          <AppProviders>{children}</AppProviders>
+        </StyledComponentsRegistry>
       </body>
     </html>
   );

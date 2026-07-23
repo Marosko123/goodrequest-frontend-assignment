@@ -13,6 +13,10 @@ export async function mockReadApi(page: Page) {
           shelters: [
             { id: 4, name: "Žilinský útulok" },
             { id: 7, name: "Útulok Trenčín" },
+            {
+              id: 9,
+              name: "Útulok a záchranná stanica pre opustené psy s veľmi dlhým názvom",
+            },
           ],
         }),
       });

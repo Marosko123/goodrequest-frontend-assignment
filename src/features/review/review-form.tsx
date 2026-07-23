@@ -1,60 +1,75 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { z } from "zod";
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 
 import { Button } from "@/components/ui/button";
+import { ChoiceControl } from "@/components/ui/choice-control";
+import { ArrowLeftIcon } from "@/components/ui/icons";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import type { DonationSelection, DonorDetails } from "@/domain/donation";
+import { formatCurrency } from "@/i18n/format";
 import type { ContributionResponse } from "@/lib/api/contracts";
 
+import { getSubmissionError, type SubmissionError } from "./submission";
 import {
-  assertContributionAccepted,
-  getSubmissionError,
-  type SubmissionError,
-} from "./submission";
-import styles from "./review-form.module.scss";
+  Actions,
+  Block,
+  ConsentField,
+  ConsentLabel,
+  ErrorMessage,
+  Form,
+  Summary,
+} from "./review-form.styles";
 
-const reviewSchema = z.object({
-  consent: z.boolean().refine((value) => value, {
-    message: "Na odoslanie príspevku je potrebný váš súhlas.",
-  }),
-});
-
-type ReviewFormValues = z.input<typeof reviewSchema>;
-
-const currencyFormatter = new Intl.NumberFormat("sk-SK", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 2,
-});
+const submissionTranslationKeys = {
+  offline: ["review.errors.offlineTitle", "review.errors.offlineMessage"],
+  unknown: ["review.errors.unknownTitle", "review.errors.unknownMessage"],
+  "rate-limit": [
+    "review.errors.rateLimitTitle",
+    "review.errors.rateLimitMessage",
+  ],
+  invalid: ["review.errors.invalidTitle", "review.errors.invalidMessage"],
+  service: ["review.errors.serviceTitle", "review.errors.serviceMessage"],
+} as const;
 
 export function ReviewForm({
   donor,
   onBack,
-  onEditDetails,
-  onEditSelection,
   onSuccess,
   selection,
   submit,
 }: {
   donor: DonorDetails;
   onBack: () => void;
-  onEditDetails: () => void;
-  onEditSelection: () => void;
   onSuccess: () => void;
   selection: DonationSelection;
   submit: () => Promise<ContributionResponse>;
 }) {
+  const { i18n, t } = useTranslation();
+  const locale = i18n.resolvedLanguage === "en" ? "en" : "sk";
+  const reviewSchema = useMemo(
+    () =>
+      z.object({
+        consent: z.boolean().refine((value) => value, {
+          message: t("review.consentError"),
+        }),
+      }),
+    [t],
+  );
+  type ReviewFormValues = z.input<typeof reviewSchema>;
   const submitLock = useRef(false);
   const [submissionError, setSubmissionError] =
     useState<SubmissionError | null>(null);
   const {
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitted, isSubmitting },
     handleSubmit,
     register,
+    trigger,
   } = useForm<ReviewFormValues>({
     defaultValues: { consent: false },
     resolver: zodResolver(reviewSchema),
@@ -66,129 +81,135 @@ export function ReviewForm({
       return;
     }
 
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setSubmissionError({ kind: "offline" });
+      return;
+    }
+
     submitLock.current = true;
     setSubmissionError(null);
 
     try {
-      const response = await submit();
-      assertContributionAccepted(response);
+      await submit();
       onSuccess();
     } catch (error) {
-      const isOnline =
-        typeof navigator === "undefined" ? true : navigator.onLine;
-      setSubmissionError(getSubmissionError(error, isOnline));
+      setSubmissionError(getSubmissionError(error));
       submitLock.current = false;
     }
   }
 
   const donorName = [donor.firstName, donor.lastName].filter(Boolean).join(" ");
-  const submitLabel = submissionError ? "Skúsiť znova" : "Odoslať príspevok";
+  const donorPhone = donor.phoneE164
+    ? (parsePhoneNumberFromString(donor.phoneE164)?.formatInternational() ??
+      donor.phoneE164)
+    : null;
+  const submitLabel =
+    submissionError?.kind === "unknown"
+      ? t("review.resend")
+      : submissionError
+        ? t("common.retry")
+        : t("review.submit");
+  const submissionMessage = submissionError
+    ? submissionTranslationKeys[submissionError.kind]
+    : null;
+
+  useEffect(() => {
+    if (isSubmitted) {
+      void trigger();
+    }
+  }, [i18n.resolvedLanguage, isSubmitted, trigger]);
 
   return (
-    <form
-      aria-label="Potvrdenie príspevku"
-      className={styles.form}
+    <Form
+      aria-label={t("review.formLabel")}
       noValidate
       onSubmit={(event) => {
         void handleSubmit(submitForm)(event);
       }}
     >
-      <section
-        aria-labelledby="contribution-summary-title"
-        className={styles.card}
-      >
-        <div className={styles.cardHeading}>
-          <h2 id="contribution-summary-title">Príspevok</h2>
-          <button
-            className={styles.editButton}
-            onClick={onEditSelection}
-            type="button"
-          >
-            Upraviť
-          </button>
-        </div>
-        <dl className={styles.summary}>
+      <Block aria-labelledby="contribution-summary-title" data-primary>
+        <h2 id="contribution-summary-title">{t("review.summary")}</h2>
+        <Summary>
           <div>
-            <dt>Komu pomáhate</dt>
+            <dt>{t("review.helpType")}</dt>
             <dd>
               {selection.target === "foundation"
-                ? "Celá nadácia GoodBoy"
-                : selection.shelter.name}
+                ? t("review.foundationHelp")
+                : t("review.shelterHelp")}
             </dd>
           </div>
+          {selection.target === "shelter" ? (
+            <div>
+              <dt>{t("review.shelter")}</dt>
+              <dd>{selection.shelter.name}</dd>
+            </div>
+          ) : null}
           <div>
-            <dt>Suma</dt>
-            <dd>{currencyFormatter.format(selection.amountCents / 100)}</dd>
+            <dt>{t("review.amount")}</dt>
+            <dd>{formatCurrency(selection.amountCents / 100, locale)}</dd>
           </div>
-        </dl>
-      </section>
+        </Summary>
+      </Block>
 
-      <section aria-labelledby="donor-summary-title" className={styles.card}>
-        <div className={styles.cardHeading}>
-          <h2 id="donor-summary-title">Vaše údaje</h2>
-          <button
-            className={styles.editButton}
-            onClick={onEditDetails}
-            type="button"
-          >
-            Upraviť
-          </button>
-        </div>
-        <dl className={styles.summary}>
+      <Block aria-label={t("review.personalData")}>
+        <Summary>
           <div>
-            <dt>Meno</dt>
+            <dt>{t("review.fullName")}</dt>
             <dd>{donorName}</dd>
           </div>
           <div>
-            <dt>E-mail</dt>
+            <dt>{t("review.email")}</dt>
             <dd>{donor.email}</dd>
           </div>
-          {donor.phoneE164 ? (
+          {donorPhone ? (
             <div>
-              <dt>Telefón</dt>
-              <dd>{donor.phoneE164}</dd>
+              <dt>{t("review.phone")}</dt>
+              <dd>{donorPhone}</dd>
             </div>
           ) : null}
-        </dl>
-      </section>
+        </Summary>
+      </Block>
 
-      <div className={styles.consentField}>
-        <label className={styles.consentLabel}>
-          <input
+      <ConsentField>
+        <ConsentLabel>
+          <ChoiceControl
             {...register("consent")}
             aria-describedby={errors.consent ? "consent-error" : undefined}
             aria-invalid={errors.consent ? "true" : undefined}
-            className={styles.checkbox}
+            size="sm"
             type="checkbox"
           />
-          <span>
-            Súhlasím so spracovaním osobných údajov na účely evidencie
-            príspevku.
-          </span>
-        </label>
+          <span>{t("review.consent")}</span>
+        </ConsentLabel>
         {errors.consent?.message ? (
-          <p className={styles.error} id="consent-error" role="alert">
+          <ErrorMessage id="consent-error" role="alert">
             {errors.consent.message}
-          </p>
+          </ErrorMessage>
         ) : null}
-      </div>
+      </ConsentField>
 
       <div aria-live="polite">
-        {submissionError ? (
-          <InlineAlert title={submissionError.title} tone="error">
-            {submissionError.message}
+        {submissionMessage ? (
+          <InlineAlert title={t(submissionMessage[0])} tone="error">
+            {t(submissionMessage[1])}
           </InlineAlert>
         ) : null}
       </div>
 
-      <div className={styles.actions}>
-        <Button disabled={isSubmitting} onClick={onBack} variant="secondary">
-          Späť
+      <Actions>
+        <Button
+          disabled={isSubmitting}
+          icon={<ArrowLeftIcon />}
+          iconPosition="start"
+          onClick={onBack}
+          variant="secondary"
+        >
+          {t("common.back")}
         </Button>
         <Button loading={isSubmitting} type="submit">
           {submitLabel}
         </Button>
-      </div>
-    </form>
+      </Actions>
+    </Form>
   );
 }

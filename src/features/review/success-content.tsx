@@ -1,29 +1,40 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 import { useDonationFlow } from "@/features/donation-flow/context";
+import { getLocalizedPath } from "@/i18n/config";
 
-import styles from "./success-content.module.scss";
+import {
+  AgainLink,
+  Celebration,
+  Content,
+  PawLeft,
+  PawRight,
+  SuccessIcon,
+} from "./success-content.styles";
 
 export function SuccessContent() {
   const { dispatch } = useDonationFlow();
-
-  useEffect(() => {
-    dispatch({ type: "flowReset" });
-  }, [dispatch]);
+  const { i18n, t } = useTranslation();
+  const locale = i18n.resolvedLanguage === "en" ? "en" : "sk";
 
   return (
-    <section className={styles.content}>
-      <span aria-hidden="true" className={styles.icon}>
-        ✓
-      </span>
-      <h1>Ďakujeme za váš príspevok</h1>
-      <p>Príspevok bol úspešne prijatý.</p>
-      <Link className={styles.link} href="/" prefetch={false}>
-        Prispieť znova
-      </Link>
-    </section>
+    <Content>
+      <Celebration aria-hidden="true">
+        <PawLeft />
+        <SuccessIcon />
+        <PawRight />
+      </Celebration>
+      <h1>{t("success.title")}</h1>
+      <p>{t("success.message")}</p>
+      <AgainLink
+        href={getLocalizedPath(locale, "/")}
+        onClick={() => dispatch({ type: "flowReset" })}
+        prefetch={false}
+      >
+        {t("success.again")}
+      </AgainLink>
+    </Content>
   );
 }

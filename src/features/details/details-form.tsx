@@ -1,8 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type ChangeEvent } from "react";
+import { type ChangeEvent, useEffect, useMemo, useRef } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,98 +17,214 @@ import {
   type FormErrorItem,
 } from "@/components/ui/form-error-summary";
 import { TextField } from "@/components/ui/text-field";
-import type { DonorDetails } from "@/domain/donation";
+import type { DonorDetails, PhoneCountry } from "@/domain/donation";
+import type { DonorDraft } from "@/features/donation-flow/state";
 
-import { detectPhoneCountry } from "./phone";
-import { detailsSchema, type DetailsFormValues } from "./schema";
-import styles from "./details-form.module.scss";
+import { formatPhoneInput, type PhoneErrorCode } from "./phone";
+import {
+  createDetailsSchema,
+  getPhoneErrorMessage,
+  type DetailsFormValues,
+} from "./schema";
+import {
+  Actions,
+  CountryPicker,
+  CountrySelect,
+  ErrorMessage,
+  Form,
+  NameGrid,
+  PhoneControl,
+  PhoneField,
+  PhoneInput,
+  PhoneLabel,
+  PhoneNumber,
+  Prefix,
+} from "./details-form.styles";
 
-function getDefaultValues(initialValue?: DonorDetails): DetailsFormValues {
-  const dialCode = initialValue?.phoneCountry === "CZ" ? "+420" : "+421";
+function getDefaultValues(
+  initialDraft?: DonorDraft,
+  initialValue?: DonorDetails,
+): DetailsFormValues {
+  if (initialDraft) {
+    return initialDraft;
+  }
+
+  const phoneCountry = initialValue?.phoneCountry ?? "SK";
+  const formattedPhone = initialValue
+    ? formatPhoneInput(initialValue.phoneE164, phoneCountry)
+    : null;
 
   return {
     firstName: initialValue?.firstName ?? "",
     lastName: initialValue?.lastName ?? "",
     email: initialValue?.email ?? "",
-    phone: initialValue?.phoneE164?.replace(dialCode, "") ?? "",
-    phoneCountry: initialValue?.phoneCountry ?? "SK",
+    phone: formattedPhone?.accepted ? formattedPhone.value : "",
+    phoneCountry,
   };
 }
 
 export function DetailsForm({
+  initialDraft,
   initialValue,
   onBack,
   onComplete,
+  onDraftChange,
 }: {
+  initialDraft?: DonorDraft;
   initialValue?: DonorDetails;
   onBack: () => void;
   onComplete: (donor: DonorDetails) => void;
+  onDraftChange?: (draft: DonorDraft) => void;
 }) {
+  const { i18n, t } = useTranslation();
+  const schema = useMemo(() => createDetailsSchema(t), [t]);
   const {
     control,
     formState: { errors, isSubmitted },
     handleSubmit,
     register,
+    setError,
+    setFocus,
     setValue,
+    subscribe,
+    trigger,
   } = useForm<DetailsFormValues, unknown, DonorDetails>({
-    defaultValues: getDefaultValues(initialValue),
-    resolver: zodResolver(detailsSchema),
-    shouldFocusError: true,
+    defaultValues: getDefaultValues(initialDraft, initialValue),
+    resolver: zodResolver(schema),
+    mode: "onBlur",
+    reValidateMode: "onChange",
+    shouldFocusError: false,
   });
   const country = useWatch({ control, name: "phoneCountry" });
+  const phone = useWatch({ control, name: "phone" });
+  const previousLanguage = useRef(i18n.resolvedLanguage);
   const phoneRegistration = register("phone");
   const errorItems: FormErrorItem[] = [
-    ["first-name", "Meno", errors.firstName?.message],
-    ["last-name", "Priezvisko", errors.lastName?.message],
-    ["email", "E-mailová adresa", errors.email?.message],
-    ["phone", "Telefónne číslo", errors.phone?.message],
+    ["first-name", t("details.firstName"), errors.firstName?.message],
+    ["last-name", t("details.lastName"), errors.lastName?.message],
+    ["email", t("details.email"), errors.email?.message],
+    ["phone", t("details.phone"), errors.phone?.message],
   ]
     .filter((item): item is [string, string, string] => Boolean(item[2]))
     .map(([fieldId, label, message]) => ({ fieldId, label, message }));
 
-  function handlePhoneChange(event: ChangeEvent<HTMLInputElement>) {
-    const rawValue = event.target.value;
-    const detectedCountry = detectPhoneCountry(rawValue);
-    const nationalValue = detectedCountry
-      ? rawValue.replace(/^(?:\+|00)(?:420|421)\s*/, "")
-      : rawValue;
+  useEffect(() => {
+    if (!onDraftChange) {
+      return;
+    }
 
-    setValue("phone", nationalValue, {
-      shouldDirty: true,
-      shouldValidate: isSubmitted,
+    return subscribe({
+      formState: { values: true },
+      callback: ({ values }) => onDraftChange(values),
     });
-    if (detectedCountry && detectedCountry !== country) {
-      setValue("phoneCountry", detectedCountry, { shouldDirty: true });
+  }, [onDraftChange, subscribe]);
+
+  const hasErrors = errorItems.length > 0;
+
+  useEffect(() => {
+    if (previousLanguage.current === i18n.resolvedLanguage) {
+      return;
+    }
+
+    previousLanguage.current = i18n.resolvedLanguage;
+    if (isSubmitted || hasErrors) {
+      const manualPhoneType = errors.phone?.type;
+      if (manualPhoneType?.startsWith("manual-")) {
+        const code = manualPhoneType.slice("manual-".length) as PhoneErrorCode;
+        setError("phone", {
+          type: manualPhoneType,
+          message: getPhoneErrorMessage(code, t),
+        });
+      }
+
+      const fieldsToValidate = (
+        Object.keys(errors) as (keyof DetailsFormValues)[]
+      ).filter(
+        (fieldName) =>
+          fieldName !== "phone" || !manualPhoneType?.startsWith("manual-"),
+      );
+      if (fieldsToValidate.length > 0) {
+        void trigger(fieldsToValidate);
+      }
+    }
+  }, [
+    errors,
+    hasErrors,
+    i18n.resolvedLanguage,
+    isSubmitted,
+    setError,
+    t,
+    trigger,
+  ]);
+
+  function handlePhoneChange(event: ChangeEvent<HTMLInputElement>) {
+    const result = formatPhoneInput(event.target.value, country);
+
+    if (!result.accepted) {
+      setError("phone", {
+        type: `manual-${result.code}`,
+        message: getPhoneErrorMessage(result.code, t),
+      });
+      return;
+    }
+
+    if (result.country !== country) {
+      setValue("phoneCountry", result.country, { shouldDirty: true });
+    }
+    setValue("phone", result.value, {
+      shouldDirty: true,
+      shouldValidate: Boolean(errors.phone),
+    });
+  }
+
+  function handlePhoneCountryChange(
+    nextCountry: PhoneCountry,
+    onChange: (value: PhoneCountry) => void,
+  ) {
+    onChange(nextCountry);
+    const formatted = formatPhoneInput(phone, nextCountry);
+    if (formatted.accepted) {
+      setValue("phone", formatted.value, {
+        shouldDirty: true,
+        shouldValidate: Boolean(errors.phone),
+      });
     }
   }
 
   return (
-    <form
-      className={styles.form}
+    <Form
       noValidate
-      onSubmit={handleSubmit((donor) => onComplete(donor))}
+      onSubmit={handleSubmit(
+        (donor) => onComplete(donor),
+        (validationErrors) => {
+          const firstInvalid = (
+            ["firstName", "lastName", "email", "phone"] as const
+          ).find((fieldName) => validationErrors[fieldName]);
+          if (firstInvalid) {
+            setFocus(firstInvalid);
+          }
+        },
+      )}
     >
-      <div className={styles.nameGrid}>
+      <NameGrid>
         <TextField
           {...register("firstName")}
           autoComplete="given-name"
           error={errors.firstName?.message}
           id="first-name"
-          label="Meno"
-          maxLength={20}
-          placeholder="Zadajte vaše meno"
+          label={t("details.firstName")}
+          placeholder={t("details.firstNamePlaceholder")}
         />
         <TextField
           {...register("lastName")}
           autoComplete="family-name"
           error={errors.lastName?.message}
           id="last-name"
-          label="Priezvisko"
-          maxLength={30}
-          placeholder="Zadajte vaše priezvisko"
+          label={t("details.lastName")}
+          placeholder={t("details.lastNamePlaceholder")}
           required
         />
-      </div>
+      </NameGrid>
 
       <TextField
         {...register("email")}
@@ -116,83 +233,94 @@ export function DetailsForm({
         error={errors.email?.message}
         id="email"
         inputMode="email"
-        label="E-mailová adresa"
-        placeholder="Zadajte váš e-mail"
+        label={t("details.email")}
+        placeholder={t("details.emailPlaceholder")}
         required
         type="email"
       />
 
-      <div className={styles.phoneField}>
-        <label className={styles.phoneLabel} htmlFor="phone">
-          Telefónne číslo
-        </label>
-        <div className={styles.phoneControl}>
+      <PhoneField>
+        <PhoneLabel htmlFor="phone">
+          {t("details.phone")}
+          <span aria-hidden="true"> *</span>
+        </PhoneLabel>
+        <PhoneControl>
           <label className="sr-only" htmlFor="phone-country">
-            Krajina telefónneho čísla
+            {t("details.phoneCountry")}
           </label>
           <Controller
             control={control}
             name="phoneCountry"
             render={({ field }) => (
-              <span className={styles.countryPicker}>
+              <CountryPicker>
                 <CountryFlag country={field.value} />
                 <ChevronDownIcon />
-                <select
-                  aria-label="Krajina telefónneho čísla"
-                  className={styles.countrySelect}
+                <CountrySelect
+                  aria-label={t("details.phoneCountry")}
                   id="phone-country"
                   name={field.name}
                   onBlur={field.onBlur}
-                  onChange={field.onChange}
+                  onChange={(event) =>
+                    handlePhoneCountryChange(
+                      event.target.value as PhoneCountry,
+                      field.onChange,
+                    )
+                  }
                   ref={field.ref}
                   value={field.value}
                 >
-                  <option value="SK">Slovensko +421</option>
-                  <option value="CZ">Česko +420</option>
-                </select>
-              </span>
+                  <option value="SK">{t("details.slovakia")}</option>
+                  <option value="CZ">{t("details.czechia")}</option>
+                </CountrySelect>
+              </CountryPicker>
             )}
           />
-          <span className={styles.phoneNumber}>
-            <span className={styles.prefix} data-testid="phone-prefix">
+          <PhoneNumber>
+            <Prefix data-testid="phone-prefix">
               {country === "CZ" ? "+420" : "+421"}
-            </span>
-            <input
+            </Prefix>
+            <PhoneInput
               {...phoneRegistration}
               aria-describedby={errors.phone ? "phone-error" : undefined}
               aria-invalid={errors.phone ? "true" : undefined}
               autoComplete="tel-national"
-              className={styles.phoneInput}
               id="phone"
               inputMode="tel"
+              onBlur={(event) => {
+                if (!errors.phone?.type?.startsWith("manual-")) {
+                  void phoneRegistration.onBlur(event);
+                }
+              }}
               onChange={handlePhoneChange}
               placeholder="123 321 123"
+              required
               type="tel"
+              value={phone}
             />
-          </span>
-        </div>
+          </PhoneNumber>
+        </PhoneControl>
         {errors.phone?.message ? (
-          <p className={styles.error} id="phone-error" role="alert">
+          <ErrorMessage id="phone-error" role="alert">
             {errors.phone.message}
-          </p>
+          </ErrorMessage>
         ) : null}
-      </div>
+      </PhoneField>
 
       {isSubmitted ? <FormErrorSummary errors={errorItems} /> : null}
 
-      <div className={styles.actions}>
+      <Actions>
         <Button
           icon={<ArrowLeftIcon />}
           iconPosition="start"
           onClick={onBack}
           variant="secondary"
         >
-          Späť
+          {t("common.back")}
         </Button>
         <Button icon={<ArrowRightIcon />} type="submit">
-          Pokračovať
+          {t("common.continue")}
         </Button>
-      </div>
-    </form>
+      </Actions>
+    </Form>
   );
 }
