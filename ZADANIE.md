@@ -2,7 +2,7 @@
 
 ## Cieľ
 
-Vytvoriť kvalitnú, responzívnu aplikáciu v Next.js a TypeScripte, ktorá umožní podporiť nadáciu GoodBoy alebo konkrétny slovenský útulok. Zdrojový dvojjazyčný brief je v [README.md](./README.md); pri rozpore má prednosť jeho obsah.
+Vytvoriť kvalitnú, responzívnu aplikáciu v Next.js a TypeScripte, ktorá umožní podporiť nadáciu GoodBoy alebo konkrétny slovenský útulok. Zdrojový dvojjazyčný brief je v [docs/assignment-brief.md](./docs/assignment-brief.md); pri rozpore má prednosť jeho obsah.
 
 ## Povinné používateľské scenáre
 
@@ -48,4 +48,4 @@ Vytvoriť kvalitnú, responzívnu aplikáciu v Next.js a TypeScripte, ktorá umo
 
 ## Aktuálny stav
 
-Repozitár obsahuje hotovú statickú Next.js aplikáciu s kompletným trojkrokovým flow, kontaktnou stránkou, stránkou o projekte, živými API dátami, testami a výkonnostnými limitmi. Workflow po úspešných kontrolách nasadí export `out/` na GitHub Pages; pôvodný placeholder už nie je súčasťou nasadzovaného artefaktu.
+Repozitár obsahuje hotovú statickú Next.js aplikáciu s kompletným trojkrokovým flow, kontaktnou stránkou, stránkou o projekte, živými API dátami, testami a výkonnostnými limitmi. Workflow po úspešných kontrolách nasadí export `out/` na GitHub Pages.
