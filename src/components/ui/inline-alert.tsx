@@ -1,9 +1,12 @@
 import type { ReactNode } from "react";
 
+import { AlertCircleIcon } from "./icons";
 import {
   Alert,
   AlertAction,
   AlertBody,
+  AlertCopy,
+  FeaturedIcon,
   AlertTitle,
 } from "./inline-alert.styles";
 
@@ -22,14 +25,19 @@ export function InlineAlert({
 }) {
   return (
     <Alert
+      aria-atomic="true"
       aria-label={title}
+      aria-live={tone === "error" ? "assertive" : "polite"}
       data-tone={tone}
       role={tone === "error" ? "alert" : "status"}
     >
-      <div>
+      <FeaturedIcon aria-hidden="true" data-featured-icon data-tone={tone}>
+        <AlertCircleIcon />
+      </FeaturedIcon>
+      <AlertCopy>
         <AlertTitle>{title}</AlertTitle>
         <AlertBody>{children}</AlertBody>
-      </div>
+      </AlertCopy>
       {action ? <AlertAction>{action}</AlertAction> : null}
     </Alert>
   );

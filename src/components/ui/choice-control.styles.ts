@@ -9,16 +9,16 @@ export const ChoiceInput = styled.input`
   padding: 0;
   margin: 0;
   appearance: none;
-  border: 1px solid ${theme.colors.textMuted};
+  border: 1px solid ${theme.colors.textSubtle};
   background: ${theme.colors.canvas};
   cursor: pointer;
   place-items: center;
+  user-select: none;
   transition:
     background-color ${theme.motion.fast} ${theme.motion.easeStandard},
     border-color ${theme.motion.fast} ${theme.motion.easeStandard},
     box-shadow ${theme.motion.fast} ${theme.motion.easeStandard},
-    color ${theme.motion.fast} ${theme.motion.easeStandard},
-    transform ${theme.motion.instant} ${theme.motion.easeEnter};
+    color ${theme.motion.fast} ${theme.motion.easeStandard};
 
   &[data-size="sm"] {
     width: ${theme.sizes.iconSm};
@@ -38,92 +38,90 @@ export const ChoiceInput = styled.input`
 
   &::after {
     display: block;
-    width: 54%;
-    height: 30%;
-    border-width: 0 0 2px 2px;
-    border-style: solid;
-    border-color: currentcolor;
+    width: 100%;
+    height: 100%;
+    background: currentcolor;
     content: "";
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M12 5 6.5 10.5 4 8' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      center / 100% 100% no-repeat;
     opacity: 0;
-    transform: translateY(-10%) rotate(-45deg) scale(0.65);
-    transition:
-      opacity ${theme.motion.fast} ${theme.motion.easeStandard},
-      transform ${theme.motion.fast} ${theme.motion.easePlayful};
+    transition: opacity ${theme.motion.fast} ${theme.motion.easeStandard};
   }
 
   &[type="radio"]::after {
-    width: 40%;
-    height: 40%;
-    border: 0;
+    width: 37.5%;
+    height: 37.5%;
     border-radius: 50%;
     background: currentcolor;
-    transform: scale(0.65);
-  }
-
-  &:hover:not(:disabled) {
-    border-color: ${theme.colors.primaryHover};
-    background: ${theme.colors.primarySoft};
-  }
-
-  &:focus-visible {
-    border-color: ${theme.colors.primaryPressed};
-    box-shadow: ${theme.shadows.focus};
-    outline: none;
+    mask: none;
   }
 
   &:checked,
-  &[data-indeterminate] {
+  &[type="checkbox"]:indeterminate {
     border-color: ${theme.colors.primary};
     background: ${theme.colors.primarySoft};
     color: ${theme.colors.primary};
 
     &::after {
       opacity: 1;
-      transform: translateY(-10%) rotate(-45deg) scale(1);
     }
   }
 
-  &[type="radio"]:checked::after {
-    transform: scale(1);
+  &[type="checkbox"]:indeterminate::after {
+    width: 58.333%;
+    height: 2px;
+    mask: none;
   }
 
-  &[data-indeterminate]::after {
-    width: 58%;
-    height: 0;
-    border-width: 0 0 2px;
-    transform: scale(1);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled, :checked, :indeterminate) {
+      border-color: ${theme.colors.primaryHover};
+      background: ${theme.colors.primarySoft};
+      color: ${theme.colors.primaryHover};
+    }
   }
 
   &:active:not(:disabled) {
-    transform: scale(0.94);
+    box-shadow: inset 0 0 0 1px ${theme.colors.primaryPressed};
+  }
+
+  &:focus-visible {
+    border-color: ${theme.colors.primaryPressed};
+    box-shadow: ${theme.shadows.focus};
+    color: ${theme.colors.primaryPressed};
+    outline: none;
   }
 
   &[aria-invalid="true"] {
     border-color: ${theme.colors.dangerHover};
-    background: ${theme.colors.dangerSoft};
+    background: ${theme.colors.canvas};
     color: ${theme.colors.dangerHover};
+  }
+
+  &:checked[aria-invalid="true"],
+  &[type="checkbox"]:indeterminate[aria-invalid="true"] {
+    background: ${theme.colors.dangerSoft};
   }
 
   &:disabled {
     cursor: not-allowed;
+    border-color: ${theme.colors.textMuted};
+    background: ${theme.colors.canvas};
+    color: ${theme.colors.textMuted};
     opacity: 0.32;
   }
 
-  @media (hover: hover) and (pointer: fine) {
-    &:hover:not(:disabled) {
-      transform: translateY(-1px);
-    }
+  &:disabled:checked,
+  &[type="checkbox"]:disabled:indeterminate {
+    border-color: ${theme.colors.primary};
+    background: ${theme.colors.inverseContentPrimary};
+    color: ${theme.colors.primary};
   }
 
   @media (prefers-reduced-motion: reduce) {
     &,
     &::after {
       transition: none;
-    }
-
-    &:hover:not(:disabled),
-    &:active:not(:disabled) {
-      transform: none;
     }
   }
 `;

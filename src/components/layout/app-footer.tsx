@@ -4,19 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
 
+import { SocialLink } from "@/components/ui/social-link";
 import { getLocaleFromPathname, getLocalizedPath } from "@/i18n/config";
 
 import { Logo } from "./logo";
-import {
-  Footer,
-  FooterLinks,
-  HomeLink,
-  Navigation,
-  Socials,
-} from "./app-footer.styles";
-import { FacebookIcon, InstagramIcon } from "../ui/icons";
+import { Footer, HomeLink, Navigation, Socials } from "./app-footer.styles";
 
-export function AppFooter({ showSocials = true }: { showSocials?: boolean }) {
+export function AppFooter() {
   const pathname = usePathname();
   const { t } = useTranslation();
   const locale = getLocaleFromPathname(pathname);
@@ -26,39 +20,30 @@ export function AppFooter({ showSocials = true }: { showSocials?: boolean }) {
       <HomeLink
         aria-label={t("navigation.home")}
         href={getLocalizedPath(locale, "/")}
+        prefetch={false}
       >
         <Logo />
       </HomeLink>
-      <FooterLinks>
-        {showSocials ? (
-          <Socials aria-label={t("navigation.socials")}>
-            <a
-              aria-label="Facebook"
-              href="https://www.facebook.com/goodrequest"
-              rel="noreferrer"
-              target="_blank"
-            >
-              <FacebookIcon />
-            </a>
-            <a
-              aria-label="Instagram"
-              href="https://www.instagram.com/goodrequest"
-              rel="noreferrer"
-              target="_blank"
-            >
-              <InstagramIcon />
-            </a>
-          </Socials>
-        ) : null}
-        <Navigation aria-label={t("navigation.supplementary")}>
-          <Link href={getLocalizedPath(locale, "/contact/")}>
-            {t("common.contact")}
-          </Link>
-          <Link href={getLocalizedPath(locale, "/about/")}>
-            {t("common.about")}
-          </Link>
-        </Navigation>
-      </FooterLinks>
+      <Socials aria-label={t("navigation.socials")}>
+        <SocialLink
+          href="https://www.facebook.com/goodrequest"
+          platform="facebook"
+          variant="gray"
+        />
+        <SocialLink
+          href="https://www.instagram.com/goodrequest"
+          platform="instagram"
+          variant="gray"
+        />
+      </Socials>
+      <Navigation aria-label={t("navigation.supplementary")}>
+        <Link href={getLocalizedPath(locale, "/contact/")} prefetch={false}>
+          {t("common.contact")}
+        </Link>
+        <Link href={getLocalizedPath(locale, "/about/")} prefetch={false}>
+          {t("common.about")}
+        </Link>
+      </Navigation>
     </Footer>
   );
 }

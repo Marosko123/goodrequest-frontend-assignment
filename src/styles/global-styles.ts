@@ -2,6 +2,11 @@ import { createGlobalStyle } from "styled-components";
 
 import { rawTheme } from "./theme";
 
+// Note on the focus-visible rule below: it is the default indicator for
+// controls that do not paint their own ring, so it must clear WCAG 2.4.11
+// alone. Hence a solid colour — the translucent --color-focus-ring reaches
+// only 1.5:1 and is reserved for the soft halo on filled controls, where the
+// border swap carries the contrast.
 export const GlobalStyles = createGlobalStyle`
   :root {
     --font-sans: ${rawTheme.typography.fontSans};
@@ -18,17 +23,19 @@ export const GlobalStyles = createGlobalStyle`
     --type-text-sm-regular: ${rawTheme.typography.textSmRegular};
     --type-text-sm-medium: ${rawTheme.typography.textSmMedium};
     --type-symbol-md-regular: ${rawTheme.typography.symbolMdRegular};
-    --type-symbol-lg-bold: ${rawTheme.typography.symbolLgBold};
     --line-height-text-md: ${rawTheme.typography.lineHeightTextMd};
     --tracking-heading: ${rawTheme.typography.trackingHeading};
 
     --color-canvas: ${rawTheme.colors.canvas};
+    --color-on-accent: ${rawTheme.colors.onAccent};
+    --color-inverse-content-primary: ${rawTheme.colors.inverseContentPrimary};
     --color-surface: ${rawTheme.colors.surface};
     --color-surface-hover: ${rawTheme.colors.surfaceHover};
     --color-surface-pressed: ${rawTheme.colors.surfacePressed};
     --color-text: ${rawTheme.colors.text};
     --color-text-secondary: ${rawTheme.colors.textSecondary};
     --color-text-tertiary: ${rawTheme.colors.textTertiary};
+    --color-text-subtle: ${rawTheme.colors.textSubtle};
     --color-text-muted: ${rawTheme.colors.textMuted};
     --color-border: ${rawTheme.colors.border};
     --color-border-subtle: ${rawTheme.colors.borderSubtle};
@@ -46,6 +53,7 @@ export const GlobalStyles = createGlobalStyle`
     --color-warning: ${rawTheme.colors.warning};
     --color-warning-soft: ${rawTheme.colors.warningSoft};
     --color-focus-ring: ${rawTheme.colors.focusRing};
+    --color-focus-ring-danger: ${rawTheme.colors.focusRingDanger};
     --color-shadow: ${rawTheme.colors.shadow};
 
     --space-1: ${rawTheme.space[1]};
@@ -66,6 +74,7 @@ export const GlobalStyles = createGlobalStyle`
     --radius-lg: ${rawTheme.radii.lg};
     --radius-xl: ${rawTheme.radii.xl};
     --shadow-focus: ${rawTheme.shadows.focus};
+    --shadow-focus-danger: ${rawTheme.shadows.focusDanger};
     --shadow-card: ${rawTheme.shadows.card};
 
     --control-sm: ${rawTheme.sizes.controlSm};
@@ -73,6 +82,7 @@ export const GlobalStyles = createGlobalStyle`
     --control-lg: ${rawTheme.sizes.controlLg};
     --control-xl: ${rawTheme.sizes.controlXl};
     --control-height: ${rawTheme.sizes.controlHeight};
+    --tap-target: ${rawTheme.sizes.tapTarget};
     --icon-sm: ${rawTheme.sizes.iconSm};
     --icon-md: ${rawTheme.sizes.iconMd};
     --icon-lg: ${rawTheme.sizes.iconLg};
@@ -92,8 +102,6 @@ export const GlobalStyles = createGlobalStyle`
     --motion-fast: ${rawTheme.motion.fast};
     --motion-base: ${rawTheme.motion.base};
     --motion-celebration: ${rawTheme.motion.celebration};
-    --transition-fast: var(--motion-fast);
-    --transition-base: var(--motion-base);
     --ease-standard: ${rawTheme.motion.easeStandard};
     --ease-enter: ${rawTheme.motion.easeEnter};
     --ease-playful: ${rawTheme.motion.easePlayful};
@@ -118,7 +126,6 @@ export const GlobalStyles = createGlobalStyle`
     color: var(--color-text);
     font: var(--type-text-md-regular);
     font-synthesis: none;
-    text-rendering: optimizelegibility;
   }
 
   button,
@@ -129,14 +136,30 @@ export const GlobalStyles = createGlobalStyle`
     font: inherit;
   }
 
+  button,
+  select,
+  nav {
+    user-select: none;
+  }
+
+  input,
+  textarea {
+    user-select: text;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    user-select: none;
+  }
+
   button:focus-visible,
   a:focus-visible,
   input:focus-visible,
   select:focus-visible,
   textarea:focus-visible {
     border-radius: var(--radius-sm);
-    outline: 3px solid var(--color-focus-ring);
-    outline-offset: 3px;
+    outline: 2px solid var(--color-primary-pressed);
+    outline-offset: var(--space-1);
   }
 
   a {
@@ -151,20 +174,20 @@ export const GlobalStyles = createGlobalStyle`
     max-width: 100%;
   }
 
+  img {
+    -webkit-user-drag: none;
+    pointer-events: none;
+    user-select: none;
+  }
+
+  svg[aria-hidden="true"] {
+    pointer-events: none;
+    user-select: none;
+  }
+
   ::selection {
     background: var(--color-primary-soft);
     color: var(--color-text);
-  }
-
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-    border: 0;
   }
 
   h1,

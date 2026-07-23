@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { DonationFlowProvider } from "@/features/donation-flow/context";
+
 import { DonationShell } from "./donation-shell";
 
 vi.mock("next/navigation", () => ({
@@ -14,9 +16,11 @@ vi.mock("next/navigation", () => ({
 describe("DonationShell", () => {
   it("provides the shared stepper, artwork and footer navigation", () => {
     render(
-      <DonationShell>
-        <h1>Obsah kroku</h1>
-      </DonationShell>,
+      <DonationFlowProvider>
+        <DonationShell>
+          <h1>Obsah kroku</h1>
+        </DonationShell>
+      </DonationFlowProvider>,
     );
 
     expect(
@@ -24,7 +28,7 @@ describe("DonationShell", () => {
     ).toBeInTheDocument();
     expect(
       screen.getByRole("img", { name: "Mladý pes na pláži" }),
-    ).toBeInTheDocument();
+    ).toHaveAttribute("draggable", "false");
     expect(screen.getByText("Osobné údaje").closest("li")).toHaveAttribute(
       "aria-current",
       "step",
@@ -37,5 +41,7 @@ describe("DonationShell", () => {
       "href",
       "/about",
     );
+    expect(screen.getByRole("link", { name: "Facebook" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "Instagram" })).toBeVisible();
   });
 });

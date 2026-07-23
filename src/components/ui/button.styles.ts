@@ -2,6 +2,7 @@ import styled, { keyframes } from "styled-components";
 
 import { pressable } from "@/styles/fragments";
 import { theme } from "@/styles/theme";
+import { LoadingSpinnerIcon } from "./icons";
 
 const spin = keyframes`
   to {
@@ -9,6 +10,8 @@ const spin = keyframes`
   }
 `;
 
+// Filled variants differ only in their palette, so each one declares the four
+// colours it needs and a single shared block applies the state machine.
 export const ButtonRoot = styled.button`
   ${pressable}
 
@@ -48,68 +51,50 @@ export const ButtonRoot = styled.button`
   }
 
   &[data-variant="primary"] {
-    background: ${theme.colors.primary};
-    color: #fff;
-
-    &:hover:not(:disabled) {
-      background: ${theme.colors.primaryHover};
-    }
-
-    &:active:not(:disabled),
-    &:focus-visible {
-      background: ${theme.colors.primaryPressed};
-    }
-
-    &:focus-visible {
-      box-shadow: ${theme.shadows.focus};
-    }
-
-    &:disabled {
-      background: ${theme.colors.primary};
-    }
+    --button-surface: ${theme.colors.primary};
+    --button-surface-hover: ${theme.colors.primaryHover};
+    --button-surface-pressed: ${theme.colors.primaryPressed};
+    --button-content: ${theme.colors.onAccent};
   }
 
   &[data-variant="secondary"] {
-    background: ${theme.colors.surface};
-    color: ${theme.colors.text};
-
-    &:hover:not(:disabled) {
-      background: ${theme.colors.surfaceHover};
-    }
-
-    &:active:not(:disabled),
-    &:focus-visible {
-      background: ${theme.colors.surfacePressed};
-    }
-
-    &:focus-visible {
-      box-shadow: ${theme.shadows.focus};
-    }
-
-    &:disabled {
-      background: ${theme.colors.surface};
-    }
+    --button-surface: ${theme.colors.surface};
+    --button-surface-hover: ${theme.colors.surfaceHover};
+    --button-surface-pressed: ${theme.colors.surfacePressed};
+    --button-content: ${theme.colors.text};
   }
 
   &[data-variant="destructive"] {
-    background: ${theme.colors.danger};
-    color: #fff;
+    --button-surface: ${theme.colors.danger};
+    --button-surface-hover: ${theme.colors.dangerHover};
+    --button-surface-pressed: ${theme.colors.dangerPressed};
+    --button-content: ${theme.colors.onAccent};
+    --button-focus-ring: ${theme.shadows.focusDanger};
+  }
 
-    &:hover:not(:disabled) {
-      background: ${theme.colors.dangerHover};
+  &[data-variant="primary"],
+  &[data-variant="secondary"],
+  &[data-variant="destructive"] {
+    background: var(--button-surface);
+    color: var(--button-content);
+
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled) {
+        background: var(--button-surface-hover);
+      }
     }
 
     &:active:not(:disabled),
     &:focus-visible {
-      background: ${theme.colors.dangerPressed};
+      background: var(--button-surface-pressed);
     }
 
     &:focus-visible {
-      box-shadow: 0 0 0 2px rgb(159 18 57 / 24%);
+      box-shadow: var(--button-focus-ring, ${theme.shadows.focus});
     }
 
     &:disabled {
-      background: ${theme.colors.danger};
+      background: var(--button-surface);
     }
   }
 
@@ -119,9 +104,11 @@ export const ButtonRoot = styled.button`
     background: transparent;
     color: ${theme.colors.primary};
 
-    &:hover:not(:disabled) {
-      color: ${theme.colors.primaryHover};
-      text-decoration: underline;
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(:disabled) {
+        color: ${theme.colors.primaryHover};
+        text-decoration: underline;
+      }
     }
 
     &:active:not(:disabled),
@@ -138,13 +125,18 @@ export const ButtonRoot = styled.button`
     }
 
     @media (pointer: coarse) {
-      min-height: 2.75rem;
+      min-height: ${theme.sizes.tapTarget};
     }
   }
 
   &:disabled {
     cursor: not-allowed;
     opacity: 0.32;
+  }
+
+  &[data-loading="true"]:disabled {
+    cursor: progress;
+    opacity: 1;
   }
 
   &:focus-visible {
@@ -177,20 +169,25 @@ export const IconSlot = styled.span`
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
+  }
 
+  @media (prefers-reduced-motion: reduce) and (hover: hover) and (pointer: fine) {
     ${ButtonRoot}:hover:not(:disabled) & {
       transform: none;
     }
   }
 `;
 
-export const Spinner = styled.span`
-  width: 1.125rem;
-  height: 1.125rem;
-  border: 2px solid currentcolor;
-  border-right-color: transparent;
-  border-radius: 50%;
+export const Spinner = styled(LoadingSpinnerIcon)`
+  width: ${theme.sizes.iconMd};
+  height: ${theme.sizes.iconMd};
+  flex: none;
   animation: ${spin} 700ms linear infinite;
+
+  &[data-size="sm"] {
+    width: ${theme.sizes.iconSm};
+    height: ${theme.sizes.iconSm};
+  }
 
   @media (prefers-reduced-motion: reduce) {
     animation: none;

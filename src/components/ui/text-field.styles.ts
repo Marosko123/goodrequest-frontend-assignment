@@ -1,6 +1,6 @@
 import styled from "styled-components";
 
-import { feedbackEnter, interactiveControl } from "@/styles/fragments";
+import { fieldError, interactiveControl } from "@/styles/fragments";
 import { theme } from "@/styles/theme";
 
 export const Field = styled.div`
@@ -28,14 +28,21 @@ export const Input = styled.input`
   background: ${theme.colors.surface};
   color: ${theme.colors.text};
   font: ${theme.typography.textMdRegular};
+  user-select: text;
 
   &::placeholder {
-    color: ${theme.colors.textMuted};
+    color: ${theme.colors.textTertiary};
     opacity: 1;
   }
 
-  &:hover:not(:disabled) {
-    background: ${theme.colors.surfaceHover};
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled) {
+      background: ${theme.colors.surfaceHover};
+    }
+  }
+
+  &:active:not(:disabled) {
+    background: ${theme.colors.surfacePressed};
   }
 
   &:focus-visible {
@@ -64,9 +71,5 @@ export const Hint = styled.p`
 `;
 
 export const ErrorMessage = styled.p`
-  ${feedbackEnter}
-
-  margin: 0;
-  color: ${theme.colors.dangerHover};
-  font: ${theme.typography.textSmRegular};
+  ${fieldError}
 `;

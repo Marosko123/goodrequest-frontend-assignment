@@ -7,6 +7,7 @@ type ButtonSize = "sm" | "md" | "lg" | "xl";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   loading?: boolean;
+  loadingLabel?: ReactNode;
   variant?: ButtonVariant;
   icon?: ReactNode;
   iconPosition?: "start" | "end";
@@ -20,6 +21,7 @@ export function Button({
   icon,
   iconPosition = "end",
   loading = false,
+  loadingLabel,
   size = "xl",
   type = "button",
   variant = "primary",
@@ -30,18 +32,19 @@ export function Button({
       {...buttonProps}
       aria-busy={loading || undefined}
       className={className}
+      data-loading={loading || undefined}
       data-size={size}
       data-variant={variant}
       disabled={disabled || loading}
       type={type}
     >
-      {loading ? <Spinner aria-hidden="true" /> : null}
+      {loading ? <Spinner data-size={size === "sm" ? "sm" : "md"} /> : null}
       {!loading && icon && iconPosition === "start" ? (
         <IconSlot aria-hidden="true" data-position="start">
           {icon}
         </IconSlot>
       ) : null}
-      <span>{children}</span>
+      <span>{loading ? (loadingLabel ?? children) : children}</span>
       {!loading && icon && iconPosition === "end" ? (
         <IconSlot aria-hidden="true" data-position="end">
           {icon}

@@ -17,18 +17,26 @@ export const rawTheme = {
     textSmRegular: "400 0.875rem/1.25rem var(--font-sans)",
     textSmMedium: "500 0.875rem/1.25rem var(--font-sans)",
     symbolMdRegular: "400 1.5rem/1.5rem var(--font-sans)",
-    symbolLgBold: "700 2rem/1 var(--font-sans)",
     lineHeightTextMd: "1.5rem",
     trackingHeading: "-0.3px",
   },
   colors: {
     canvas: "#fff",
+    /** Text/icons rendered on top of a saturated `primary`/`danger` fill. */
+    onAccent: "#fff",
+    inverseContentPrimary: "#fafafa",
     surface: "#f3f4f6",
     surfaceHover: "#e5e7eb",
     surfacePressed: "#d1d5db",
     text: "#111827",
     textSecondary: "#374151",
     textTertiary: "#4b5563",
+    /**
+     * De-emphasised but load-bearing: quiet icon links and the boundary of an
+     * empty control. Clears the 3:1 that WCAG 1.4.11 asks of both.
+     */
+    textSubtle: "#6b7280",
+    /** Disabled copy only. 2.5:1, which WCAG exempts for inactive controls. */
     textMuted: "#9ca3af",
     border: "#d1d5db",
     borderSubtle: "#e5e7eb",
@@ -46,6 +54,7 @@ export const rawTheme = {
     warning: "#b45309",
     warningSoft: "#fef3c7",
     focusRing: "rgb(55 48 163 / 24%)",
+    focusRingDanger: "rgb(159 18 57 / 24%)",
     shadow: "rgb(16 24 40 / 12%)",
   },
   space: {
@@ -70,6 +79,7 @@ export const rawTheme = {
   },
   shadows: {
     focus: "0 0 0 2px var(--color-focus-ring)",
+    focusDanger: "0 0 0 2px var(--color-focus-ring-danger)",
     card: "0 18px 48px rgb(16 24 40 / 8%)",
   },
   sizes: {
@@ -78,6 +88,8 @@ export const rawTheme = {
     controlLg: "3rem",
     controlXl: "3.5rem",
     controlHeight: "var(--control-xl)",
+    /** WCAG 2.5.8 minimum target size (44px) for coarse pointers. */
+    tapTarget: "2.75rem",
     iconSm: "1rem",
     iconMd: "1.25rem",
     iconLg: "1.5rem",
@@ -121,7 +133,6 @@ export const theme = {
     textSmRegular: variable("type-text-sm-regular"),
     textSmMedium: variable("type-text-sm-medium"),
     symbolMdRegular: variable("type-symbol-md-regular"),
-    symbolLgBold: variable("type-symbol-lg-bold"),
     lineHeightTextMd: variable("line-height-text-md"),
     trackingHeading: variable("tracking-heading"),
   },
@@ -145,6 +156,7 @@ export const theme = {
   },
   shadows: {
     focus: variable("shadow-focus"),
+    focusDanger: variable("shadow-focus-danger"),
     card: variable("shadow-card"),
   },
   sizes: {
@@ -153,6 +165,7 @@ export const theme = {
     controlLg: variable("control-lg"),
     controlXl: variable("control-xl"),
     controlHeight: variable("control-height"),
+    tapTarget: variable("tap-target"),
     iconSm: variable("icon-sm"),
     iconMd: variable("icon-md"),
     iconLg: variable("icon-lg"),
@@ -174,8 +187,6 @@ export const theme = {
     fast: variable("motion-fast"),
     base: variable("motion-base"),
     celebration: variable("motion-celebration"),
-    transitionFast: variable("transition-fast"),
-    transitionBase: variable("transition-base"),
     easeStandard: variable("ease-standard"),
     easeEnter: variable("ease-enter"),
     easePlayful: variable("ease-playful"),

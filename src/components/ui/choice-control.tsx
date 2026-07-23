@@ -1,50 +1,54 @@
 "use client";
 
-import {
-  forwardRef,
-  type InputHTMLAttributes,
-  useEffect,
-  useImperativeHandle,
-  useRef,
-} from "react";
+import { type ComponentPropsWithRef, useEffect, useRef } from "react";
 
 import { ChoiceInput } from "./choice-control.styles";
 
-type ChoiceControlProps = Omit<
-  InputHTMLAttributes<HTMLInputElement>,
-  "size"
+type ChoiceControlBaseProps = Omit<
+  ComponentPropsWithRef<"input">,
+  "size" | "type"
 > & {
-  indeterminate?: boolean;
   size?: "sm" | "md";
-  type: "checkbox" | "radio";
 };
 
-export const ChoiceControl = forwardRef<HTMLInputElement, ChoiceControlProps>(
-  function ChoiceControl(
-    { className, indeterminate = false, size = "md", type, ...inputProps },
-    forwardedRef,
-  ) {
-    const inputRef = useRef<HTMLInputElement>(null);
+type ChoiceControlProps = ChoiceControlBaseProps &
+  (
+    | { indeterminate?: boolean; type: "checkbox" }
+    | { indeterminate?: never; type: "radio" }
+  );
 
-    useImperativeHandle(
-      forwardedRef,
-      () => inputRef.current as HTMLInputElement,
-    );
-    useEffect(() => {
-      if (inputRef.current) {
-        inputRef.current.indeterminate = indeterminate;
-      }
-    }, [indeterminate]);
+export function ChoiceControl({
+  className,
+  indeterminate = false,
+  ref: forwardedRef,
+  size = "md",
+  type,
+  ...inputProps
+}: ChoiceControlProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
 
-    return (
-      <ChoiceInput
-        {...inputProps}
-        className={className}
-        data-indeterminate={indeterminate || undefined}
-        data-size={size}
-        ref={inputRef}
-        type={type}
-      />
-    );
-  },
-);
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate]);
+
+  return (
+    <ChoiceInput
+      {...inputProps}
+      className={className}
+      data-size={size}
+      ref={(node) => {
+        inputRef.current = node;
+        if (typeof forwardedRef === "function") {
+          forwardedRef(node);
+          return;
+        }
+        if (forwardedRef) {
+          forwardedRef.current = node;
+        }
+      }}
+      type={type}
+    />
+  );
+}

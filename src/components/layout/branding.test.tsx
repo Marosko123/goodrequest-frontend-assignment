@@ -15,6 +15,10 @@ describe("Figma branding", () => {
       "viewBox",
       "2324 372 217 56",
     );
+    expect(container.querySelector("svg")).toHaveAttribute(
+      "data-motion",
+      "playful",
+    );
     expect(container.querySelectorAll("svg path")).toHaveLength(2);
     expect(dog).toBeInTheDocument();
     expect(dog?.querySelector("path")).toHaveAttribute("fill", "#4F46E5");

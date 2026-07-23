@@ -1,5 +1,7 @@
-import styled, { keyframes } from "styled-components";
+import Link from "next/link";
+import styled, { css, keyframes } from "styled-components";
 
+import { nonSelectableControl, visuallyHidden } from "@/styles/fragments";
 import { theme } from "@/styles/theme";
 
 const stepPop = keyframes`
@@ -7,133 +9,206 @@ const stepPop = keyframes`
   to { transform: scale(1); }
 `;
 
-const stepCheckDraw = keyframes`
-  to { stroke-dashoffset: 0; }
+const progressSpin = keyframes`
+  to { transform: rotate(360deg); }
 `;
 
 export const StepperNav = styled.nav`
   width: 100%;
-  overflow: hidden;
 `;
 
 export const StepList = styled.ol`
-  display: grid;
-  grid-template-columns: 16.75rem 16.75rem minmax(0, 1fr);
+  display: flex;
+  width: 100%;
   padding: 0;
   margin: 0;
   list-style: none;
 
-  @media (width <= 40rem) {
+  @media (width < 30rem) {
+    display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: ${theme.space[2]};
   }
 `;
 
 export const Step = styled.li`
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
-  gap: ${theme.space[2]};
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
   align-items: center;
   min-width: 0;
-  color: ${theme.colors.textTertiary};
+  color: ${theme.colors.text};
   font: ${theme.typography.textMdRegular};
-  transition: color ${theme.motion.fast} ${theme.motion.easeStandard};
 
-  &[data-current],
-  &[data-complete] {
-    color: ${theme.colors.text};
+  &[data-status="wait"] {
+    color: ${theme.colors.textTertiary};
+  }
+
+  &[data-status="error"] {
+    color: ${theme.colors.danger};
   }
 
   &:last-of-type {
-    grid-template-columns: auto minmax(0, 1fr);
+    flex: 0 0 auto;
   }
 
-  @media (width <= 40rem) {
-    grid-template-columns: auto minmax(0, 1fr);
-    gap: ${theme.space[2]};
+  @media (width >= 30rem) and (width < 37.5rem) {
+    font: ${theme.typography.textSmRegular};
+  }
+
+  @media (width < 30rem) {
+    align-items: flex-start;
+    justify-content: center;
     font: ${theme.typography.textSmRegular};
   }
 `;
 
+const stepControl = css`
+  ${nonSelectableControl}
+
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: ${theme.space[2]};
+  align-items: center;
+  min-width: max-content;
+  padding: 0;
+  border: 0;
+  border-radius: ${theme.radii.xs};
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+
+  @media (width < 30rem) {
+    flex-direction: column;
+    gap: ${theme.space[1]};
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+  }
+`;
+
+export const StepLink = styled(Link)`
+  ${stepControl}
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      color: ${theme.colors.primaryHover};
+    }
+  }
+
+  &:active {
+    color: ${theme.colors.primaryPressed};
+  }
+`;
+
+export const StepContent = styled.span`
+  ${stepControl}
+`;
+
+export const StepDisabled = styled.button`
+  ${stepControl}
+  cursor: default;
+`;
+
 export const StepNumber = styled.span`
+  position: relative;
   display: inline-grid;
+  flex: 0 0 auto;
   width: ${theme.sizes.controlMd};
   height: ${theme.sizes.controlMd};
-  border: 1px solid ${theme.colors.borderSubtle};
+  border: 1px solid ${theme.colors.surface};
   border-radius: 50%;
   place-items: center;
-  color: inherit;
+  color: ${theme.colors.border};
+  background: ${theme.colors.canvas};
+  line-height: ${theme.typography.lineHeightTextMd};
   transition:
     background-color ${theme.motion.fast} ${theme.motion.easeStandard},
     border-color ${theme.motion.fast} ${theme.motion.easeStandard},
-    color ${theme.motion.fast} ${theme.motion.easeStandard},
-    transform ${theme.motion.base} ${theme.motion.easePlayful};
+    color ${theme.motion.fast} ${theme.motion.easeStandard};
 
-  ${Step}[data-current] &,
-  ${Step}[data-complete] & {
+  ${Step}[data-status="current"] & {
     border-color: ${theme.colors.primary};
-  }
-
-  ${Step}[data-current] & {
+    color: ${theme.colors.inverseContentPrimary};
     background: ${theme.colors.primary};
-    color: #fafafa;
     animation: ${stepPop} ${theme.motion.base} ${theme.motion.easePlayful} both;
   }
 
-  ${Step}[data-complete] & {
-    background: ${theme.colors.canvas};
+  ${Step}[data-status="finished"] & {
+    border-color: ${theme.colors.primary};
     color: ${theme.colors.primary};
-
-    svg {
-      width: ${theme.sizes.iconSm};
-      height: 0.75rem;
-    }
-
-    [data-motion="step-check"] path {
-      stroke-dasharray: 22;
-      stroke-dashoffset: 0;
-    }
   }
 
-  @media (prefers-reduced-motion: no-preference) {
-    ${Step}[data-complete] & [data-motion="step-check"] path {
-      stroke-dashoffset: 22;
-      animation: ${stepCheckDraw} ${theme.motion.base} ${theme.motion.easeEnter}
-        forwards;
+  ${Step}[data-status="error"] & {
+    border-color: ${theme.colors.danger};
+    color: ${theme.colors.danger};
+  }
+
+  ${Step}[data-status="in-progress"] & {
+    border-color: transparent;
+    color: ${theme.colors.inverseContentPrimary};
+    background: transparent;
+
+    svg {
+      position: absolute;
+      inset: -0.25rem;
+      overflow: visible;
+    }
+
+    [data-vector="progress"] {
+      transform-origin: center;
+      animation: ${progressSpin} 1.2s linear infinite;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    ${Step}[data-current] & {
+    ${Step}[data-status="current"] & {
       animation: none;
       transform: none;
     }
-  }
 
-  @media (width <= 40rem) {
-    width: 1.75rem;
-    height: 1.75rem;
+    ${Step}[data-status="in-progress"] & [data-vector="progress"] {
+      animation: none;
+    }
   }
 `;
 
 export const StepLabel = styled.span`
-  overflow: hidden;
+  overflow: visible;
   white-space: nowrap;
-  text-overflow: ellipsis;
+  text-overflow: clip;
+
+  @media (width < 30rem) {
+    min-height: 2.5rem;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 `;
 
 export const StepLine = styled.span`
-  width: auto;
+  flex: 1 1 2rem;
+  min-width: 0.5rem;
   height: 1px;
   margin-inline: ${theme.space[2]} ${theme.space[4]};
   background: ${theme.colors.border};
-  transition: background-color ${theme.motion.base} ${theme.motion.easeStandard};
 
-  ${Step}[data-complete] & {
-    background: ${theme.colors.primary};
+  @media (width < 30rem) {
+    position: absolute;
+    z-index: 0;
+    top: calc((${theme.sizes.controlMd} - 1px) / 2);
+    right: calc(-50% + 1.5rem);
+    left: calc(50% + 1.5rem);
+    min-width: 0;
+    margin: 0;
   }
+`;
 
-  @media (width <= 40rem) {
-    display: none;
-  }
+export const StepStatusText = styled.span`
+  ${visuallyHidden}
+`;
+
+export const StepperAnnouncement = styled.span`
+  ${visuallyHidden}
 `;

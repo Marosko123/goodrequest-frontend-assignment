@@ -21,8 +21,9 @@ export const Shell = styled.div`
   }
 
   @media (width <= 56rem) {
-    display: flex;
-    flex-direction: column-reverse;
+    grid-template:
+      "media" auto
+      "content" minmax(min-content, 1fr) / minmax(0, 1fr);
     gap: 0;
     padding: 0;
   }
@@ -41,6 +42,7 @@ export const ContentColumn = styled.div`
   }
 
   @media (width <= 56rem) {
+    grid-area: content;
     min-height: auto;
     padding: ${theme.space[8]} ${theme.space[6]};
   }
@@ -53,7 +55,7 @@ export const ContentColumn = styled.div`
 export const Header = styled.header`
   padding-block-end: ${theme.space[10]};
 
-  @media (width < 90rem) and (width > 56rem), (width <= 56rem) {
+  @media (width < 90rem) {
     padding-block-end: ${theme.space[8]};
   }
 `;
@@ -78,6 +80,7 @@ export const Media = styled.aside`
 
   @media (width <= 56rem) {
     position: relative;
+    grid-area: media;
     top: auto;
     width: 100%;
     height: 22rem;
@@ -94,10 +97,19 @@ export const MediaImage = styled.img`
   display: block;
   width: 100%;
   height: 100%;
+  background-color: ${theme.colors.surface};
+  background-image: var(--media-blur-mobile);
+  background-position: center;
+  background-size: cover;
   object-fit: cover;
   object-position: center;
 
   @media (width <= 56rem) {
+    background-position: center 58%;
     object-position: center 58%;
+  }
+
+  @media (width > 56rem) {
+    background-image: var(--media-blur-desktop);
   }
 `;

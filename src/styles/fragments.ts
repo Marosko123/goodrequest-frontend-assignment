@@ -1,5 +1,7 @@
 import { css, keyframes } from "styled-components";
 
+import { theme } from "./theme";
+
 const feedbackEnterKeyframes = keyframes`
   from {
     opacity: 0;
@@ -23,14 +25,18 @@ export const visuallyHidden = css`
   border: 0;
 `;
 
+export const nonSelectableControl = css`
+  user-select: none;
+`;
+
 export const interactiveControl = css`
-  min-height: var(--control-height);
-  border-radius: var(--radius-sm);
+  min-height: ${theme.sizes.controlHeight};
+  border-radius: ${theme.radii.sm};
   transition:
-    background-color var(--transition-fast) var(--ease-standard),
-    border-color var(--transition-fast) var(--ease-standard),
-    box-shadow var(--transition-fast) var(--ease-standard),
-    transform var(--transition-fast) var(--ease-standard);
+    background-color ${theme.motion.fast} ${theme.motion.easeStandard},
+    border-color ${theme.motion.fast} ${theme.motion.easeStandard},
+    box-shadow ${theme.motion.fast} ${theme.motion.easeStandard},
+    transform ${theme.motion.fast} ${theme.motion.easeStandard};
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
@@ -39,12 +45,12 @@ export const interactiveControl = css`
 
 export const pressable = css`
   transition:
-    background-color var(--motion-fast) var(--ease-standard),
-    border-color var(--motion-fast) var(--ease-standard),
-    box-shadow var(--motion-fast) var(--ease-standard),
-    color var(--motion-fast) var(--ease-standard),
-    opacity var(--motion-fast) var(--ease-standard),
-    transform var(--motion-instant) var(--ease-enter);
+    background-color ${theme.motion.fast} ${theme.motion.easeStandard},
+    border-color ${theme.motion.fast} ${theme.motion.easeStandard},
+    box-shadow ${theme.motion.fast} ${theme.motion.easeStandard},
+    color ${theme.motion.fast} ${theme.motion.easeStandard},
+    opacity ${theme.motion.fast} ${theme.motion.easeStandard},
+    transform ${theme.motion.instant} ${theme.motion.easeEnter};
 
   @media (hover: hover) and (pointer: fine) {
     &:hover:not(:disabled) {
@@ -59,19 +65,38 @@ export const pressable = css`
   @media (prefers-reduced-motion: reduce) {
     transition: none;
 
-    &:hover:not(:disabled),
     &:active:not(:disabled) {
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) and (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled) {
       transform: none;
     }
   }
 `;
 
 export const feedbackEnter = css`
-  animation: ${feedbackEnterKeyframes} var(--motion-base) var(--ease-enter) both;
+  animation: ${feedbackEnterKeyframes} ${theme.motion.base}
+    ${theme.motion.easeEnter} both;
 
   @media (prefers-reduced-motion: reduce) {
     animation: none;
     opacity: 1;
     transform: none;
   }
+`;
+
+/*
+ * Every inline validation message, wherever it renders. Kept in one place
+ * because the phone field and the text fields sit on the same screen: when
+ * these drifted apart, the same error rendered in two different reds.
+ */
+export const fieldError = css`
+  ${feedbackEnter}
+
+  margin: 0;
+  color: ${theme.colors.dangerHover};
+  font: ${theme.typography.textSmRegular};
 `;

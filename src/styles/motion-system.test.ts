@@ -29,7 +29,7 @@ function collectActiveStyleSources(directory: string): string[] {
 }
 
 describe("GoodBoy motion system", () => {
-  it("exposes the approved timings, easings and compatibility aliases", () => {
+  it("exposes the approved timings and easings under exactly one name each", () => {
     expect(rawTheme.motion).toEqual({
       instant: "120ms",
       fast: "160ms",
@@ -39,8 +39,15 @@ describe("GoodBoy motion system", () => {
       easeEnter: "cubic-bezier(0.16, 1, 0.3, 1)",
       easePlayful: "cubic-bezier(0.34, 1.56, 0.64, 1)",
     });
-    expect(theme.motion.transitionFast).toBe("var(--transition-fast)");
-    expect(theme.motion.transitionBase).toBe("var(--transition-base)");
+    expect(theme.motion.fast).toBe("var(--motion-fast)");
+    expect(theme.motion.base).toBe("var(--motion-base)");
+    expect(Object.keys(theme.motion)).toEqual(Object.keys(rawTheme.motion));
+  });
+
+  it("never reintroduces a second spelling for a single duration", () => {
+    const activeStyles = collectActiveStyleSources(sourceRoot).join("\n");
+
+    expect(activeStyles).not.toMatch(/--transition-(fast|base)/);
   });
 
   it("keeps reduced motion immediate and never transitions every property", () => {

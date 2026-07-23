@@ -3,21 +3,25 @@ import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 
 import { ChoiceControl } from "./choice-control";
-import { SelectField } from "./select-field";
+import { Dropdown } from "./dropdown";
 
 describe("design primitives", () => {
   it("renders the exported select chevron and xl geometry", () => {
     const { container } = render(
-      <SelectField
-        data={[{ label: "Útulok", value: "1" }]}
+      <Dropdown
         id="shelter"
         label="Útulok"
-        onChange={() => undefined}
+        onValueChange={() => undefined}
+        options={[{ label: "Útulok", value: "1" }]}
         placeholder="Vyberte útulok"
+        value={null}
       />,
     );
 
-    expect(screen.getByRole("combobox")).toHaveAttribute("data-size", "xl");
+    expect(screen.getByRole("combobox")).toHaveAttribute(
+      "data-variant",
+      "field",
+    );
     expect(
       container.querySelector('svg[data-icon="chevron-down"]'),
     ).toBeInTheDocument();
@@ -47,5 +51,14 @@ describe("design primitives", () => {
     );
 
     expect(ref.current?.indeterminate).toBe(true);
+  });
+
+  it("only exposes indeterminate state for checkboxes", () => {
+    if (false) {
+      // @ts-expect-error Radio controls cannot be indeterminate.
+      <ChoiceControl indeterminate type="radio" />;
+    }
+
+    expect(true).toBe(true);
   });
 });

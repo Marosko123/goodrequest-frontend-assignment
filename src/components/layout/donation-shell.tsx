@@ -5,9 +5,14 @@ import { preload } from "react-dom";
 import { useTranslation } from "react-i18next";
 
 import donationDogDesktop from "@/assets/donation-dog-desktop.webp";
+import donationDogDesktopAvif from "@/assets/donation-dog-desktop.avif";
 import donationDogMobile from "@/assets/donation-dog-mobile.webp";
+import donationDogMobileAvif from "@/assets/donation-dog-mobile.avif";
 
-import { DonationFooter, DonationProgress } from "./donation-progress";
+import { AppFooter } from "./app-footer";
+import { DonationProgress } from "./donation-progress";
+import { DonationProgressProvider } from "./donation-progress-context";
+import { mainContentId } from "./skip-link";
 import {
   Content,
   ContentColumn,
@@ -19,46 +24,65 @@ import {
 
 export function DonationShell({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
-  preload(donationDogMobile.src, {
+  preload(donationDogMobileAvif.src, {
     as: "image",
     fetchPriority: "high",
-    media: "(max-width: 56rem)",
-    type: "image/webp",
+    media: "(width <= 56rem)",
+    type: "image/avif",
   });
-  preload(donationDogDesktop.src, {
+  preload(donationDogDesktopAvif.src, {
     as: "image",
     fetchPriority: "high",
-    media: "(min-width: 56.001rem)",
-    type: "image/webp",
+    media: "(width > 56rem)",
+    type: "image/avif",
   });
 
   return (
-    <Shell>
-      <ContentColumn>
-        <Header>
-          <DonationProgress />
-        </Header>
-        <Content>{children}</Content>
-        <DonationFooter />
-      </ContentColumn>
-      <Media aria-label={t("media.dogPanel")}>
-        <picture>
-          <source
-            media="(min-width: 56.001rem)"
-            srcSet={donationDogDesktop.src}
-            type="image/webp"
-          />
-          <MediaImage
-            alt={t("media.donationDog")}
-            decoding="sync"
-            fetchPriority="high"
-            height={donationDogMobile.height}
-            loading="eager"
-            src={donationDogMobile.src}
-            width={donationDogMobile.width}
-          />
-        </picture>
-      </Media>
-    </Shell>
+    <DonationProgressProvider>
+      <Shell>
+        <ContentColumn>
+          <Header>
+            <DonationProgress />
+          </Header>
+          <Content id={mainContentId} tabIndex={-1}>
+            {children}
+          </Content>
+          <AppFooter />
+        </ContentColumn>
+        <Media aria-label={t("media.dogPanel")}>
+          <picture>
+            <source
+              media="(width > 56rem)"
+              srcSet={donationDogDesktopAvif.src}
+              type="image/avif"
+            />
+            <source
+              media="(width > 56rem)"
+              srcSet={donationDogDesktop.src}
+              type="image/webp"
+            />
+            <source
+              media="(width <= 56rem)"
+              srcSet={donationDogMobileAvif.src}
+              type="image/avif"
+            />
+            <MediaImage
+              alt={t("media.donationDog")}
+              decoding="sync"
+              draggable={false}
+              fetchPriority="high"
+              height={donationDogMobile.height}
+              loading="eager"
+              src={donationDogMobile.src}
+              style={{
+                "--media-blur-desktop": `url(${donationDogDesktop.blurDataURL})`,
+                "--media-blur-mobile": `url(${donationDogMobile.blurDataURL})`,
+              }}
+              width={donationDogMobile.width}
+            />
+          </picture>
+        </Media>
+      </Shell>
+    </DonationProgressProvider>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import styled, { keyframes } from "styled-components";
 
+import { nonSelectableControl } from "@/styles/fragments";
 import { theme } from "@/styles/theme";
 
 const pageEnter = keyframes`
@@ -53,8 +54,10 @@ export const Main = styled.main`
 `;
 
 export const BackLink = styled(Link)`
+  ${nonSelectableControl}
+
   display: inline-flex;
-  min-height: 2.75rem;
+  min-height: ${theme.sizes.tapTarget};
   gap: ${theme.space[2]};
   align-items: center;
   color: ${theme.colors.primary};
@@ -66,8 +69,15 @@ export const BackLink = styled(Link)`
     height: ${theme.sizes.iconSm};
   }
 
-  &:hover {
-    color: ${theme.colors.primaryHover};
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      color: ${theme.colors.primaryHover};
+      text-decoration: underline;
+    }
+  }
+
+  &:active {
+    color: ${theme.colors.primaryPressed};
     text-decoration: underline;
   }
 `;
