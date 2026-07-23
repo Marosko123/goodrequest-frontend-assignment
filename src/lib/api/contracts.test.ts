@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { z } from "@/lib/validation/zod";
 
-import { contributionRequestSchema } from "./contracts";
+import { contributionRequestSchema, sheltersResponseSchema } from "./contracts";
 
 const contributor = {
   firstName: "Jana",
@@ -14,6 +14,38 @@ const contributor = {
 describe("runtime schema configuration", () => {
   it("keeps Zod CSP-safe without runtime code generation", () => {
     expect(z.config()).toMatchObject({ jitless: true });
+  });
+});
+
+describe("sheltersResponseSchema", () => {
+  it("accepts at most 100 shelters", () => {
+    const createShelters = (count: number) =>
+      Array.from({ length: count }, (_, index) => ({
+        id: index + 1,
+        name: `Shelter ${index + 1}`,
+      }));
+
+    expect(
+      sheltersResponseSchema.safeParse({ shelters: createShelters(100) })
+        .success,
+    ).toBe(true);
+    expect(
+      sheltersResponseSchema.safeParse({ shelters: createShelters(101) })
+        .success,
+    ).toBe(false);
+  });
+
+  it("accepts shelter names up to 100 characters", () => {
+    expect(
+      sheltersResponseSchema.safeParse({
+        shelters: [{ id: 1, name: "a".repeat(100) }],
+      }).success,
+    ).toBe(true);
+    expect(
+      sheltersResponseSchema.safeParse({
+        shelters: [{ id: 1, name: "a".repeat(101) }],
+      }).success,
+    ).toBe(false);
   });
 });
 

@@ -30,14 +30,24 @@ export type ContributionResponse = JsonResponse<
   "post"
 >;
 
+const maxShelters = 100;
+const maxShelterNameLength = 100;
+
 const shelterSchema = z.strictObject({
   id: z.number().check(z.int()).check(z.positive()),
-  name: z.string().check(z.trim()).check(z.minLength(1)),
+  name: z
+    .string()
+    .check(z.trim())
+    .check(z.minLength(1))
+    .check(z.maxLength(maxShelterNameLength)),
 });
 
 export const sheltersResponseSchema = z
   .strictObject({
-    shelters: z._default(z.optional(z.array(shelterSchema)), []),
+    shelters: z._default(
+      z.optional(z.array(shelterSchema).check(z.maxLength(maxShelters))),
+      [],
+    ),
   })
   .check(
     z.superRefine(({ shelters }, context) => {

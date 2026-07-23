@@ -3,7 +3,7 @@ packages:
 
 overrides:
   "@redocly/openapi-core>js-yaml": 4.3.0
-  "next>postcss": 8.5.10
+  "next>postcss": 8.5.22
   "next>sharp": 0.35.3
 
 allowBuilds:
