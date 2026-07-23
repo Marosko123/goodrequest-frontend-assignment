@@ -1,21 +1,30 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { z } from "zod";
-import { parsePhoneNumberFromString } from "libphonenumber-js/max";
+
+import { useLazyZodResolver } from "@/lib/validation/use-lazy-zod-resolver";
 
 import { Button } from "@/components/ui/button";
 import { ChoiceControl } from "@/components/ui/choice-control";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { InlineAlert } from "@/components/ui/inline-alert";
-import type { DonationSelection, DonorDetails } from "@/domain/donation";
+import { useDonationStepStatus } from "@/components/layout/donation-progress-context";
+import {
+  formatPhoneForDisplay,
+  type DonationSelection,
+  type DonorDetails,
+} from "@/domain/donation";
+import { getAppLocale } from "@/i18n/config";
 import { formatCurrency } from "@/i18n/format";
 import type { ContributionResponse } from "@/lib/api/contracts";
 
-import { getSubmissionError, type SubmissionError } from "./submission";
+import {
+  getSubmissionStateFromError,
+  type SubmissionState,
+} from "./submission";
+import type { ReviewFormValues } from "./schema";
 import {
   Actions,
   Block,
@@ -23,19 +32,58 @@ import {
   ConsentLabel,
   ErrorMessage,
   Form,
+  SubmissionFeedback,
   Summary,
 } from "./review-form.styles";
 
-const submissionTranslationKeys = {
-  offline: ["review.errors.offlineTitle", "review.errors.offlineMessage"],
-  unknown: ["review.errors.unknownTitle", "review.errors.unknownMessage"],
-  "rate-limit": [
-    "review.errors.rateLimitTitle",
-    "review.errors.rateLimitMessage",
-  ],
-  invalid: ["review.errors.invalidTitle", "review.errors.invalidMessage"],
-  service: ["review.errors.serviceTitle", "review.errors.serviceMessage"],
+const submissionFeedbackByState = {
+  submitting: {
+    title: "review.status.submittingTitle",
+    message: "review.status.submittingMessage",
+    tone: "info",
+  },
+  offline: {
+    title: "review.errors.offlineTitle",
+    message: "review.errors.offlineMessage",
+    tone: "warning",
+  },
+  "connection-restored": {
+    title: "review.status.restoredTitle",
+    message: "review.status.restoredMessage",
+    tone: "success",
+  },
+  "unknown-outcome": {
+    title: "review.errors.unknownTitle",
+    message: "review.errors.unknownMessage",
+    tone: "warning",
+  },
+  "rate-limited": {
+    title: "review.errors.rateLimitTitle",
+    message: "review.errors.rateLimitMessage",
+    tone: "warning",
+  },
+  invalid: {
+    title: "review.errors.invalidTitle",
+    message: "review.errors.invalidMessage",
+    tone: "error",
+  },
+  "service-unavailable": {
+    title: "review.errors.serviceTitle",
+    message: "review.errors.serviceMessage",
+    tone: "error",
+  },
 } as const;
+
+type ConnectionStatus = "online" | "offline" | "restored";
+type FeedbackState = Exclude<SubmissionState, "idle">;
+
+const blockingFeedbackStates: ReadonlySet<FeedbackState> = new Set([
+  "offline",
+  "unknown-outcome",
+  "rate-limited",
+  "invalid",
+  "service-unavailable",
+]);
 
 export function ReviewForm({
   donor,
@@ -51,28 +99,23 @@ export function ReviewForm({
   submit: () => Promise<ContributionResponse>;
 }) {
   const { i18n, t } = useTranslation();
-  const locale = i18n.resolvedLanguage === "en" ? "en" : "sk";
-  const reviewSchema = useMemo(
-    () =>
-      z.object({
-        consent: z.boolean().refine((value) => value, {
-          message: t("review.consentError"),
-        }),
-      }),
-    [t],
+  const locale = getAppLocale(i18n.resolvedLanguage);
+  const resolver = useLazyZodResolver<ReviewFormValues>(async () =>
+    (await import("./schema")).createReviewSchema(t),
   );
-  type ReviewFormValues = z.input<typeof reviewSchema>;
   const submitLock = useRef(false);
-  const [submissionError, setSubmissionError] =
-    useState<SubmissionError | null>(null);
+  const [submissionState, setSubmissionState] =
+    useState<SubmissionState>("idle");
+  const [connectionStatus, setConnectionStatus] =
+    useState<ConnectionStatus>("online");
   const {
-    formState: { errors, isSubmitted, isSubmitting },
+    formState: { errors, isSubmitted },
     handleSubmit,
     register,
     trigger,
   } = useForm<ReviewFormValues>({
     defaultValues: { consent: false },
-    resolver: zodResolver(reviewSchema),
+    resolver,
     shouldFocusError: true,
   });
 
@@ -82,36 +125,76 @@ export function ReviewForm({
     }
 
     if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setSubmissionError({ kind: "offline" });
+      setSubmissionState("idle");
+      setConnectionStatus("offline");
       return;
     }
 
     submitLock.current = true;
-    setSubmissionError(null);
+    setSubmissionState("submitting");
 
     try {
       await submit();
       onSuccess();
     } catch (error) {
-      setSubmissionError(getSubmissionError(error));
+      setSubmissionState(getSubmissionStateFromError(error));
       submitLock.current = false;
     }
   }
 
+  const submissionPending = submissionState === "submitting";
+  const feedbackState: FeedbackState | null =
+    submissionState !== "idle"
+      ? submissionState
+      : connectionStatus === "offline"
+        ? "offline"
+        : connectionStatus === "restored"
+          ? "connection-restored"
+          : null;
+  const feedback = feedbackState
+    ? submissionFeedbackByState[feedbackState]
+    : null;
+  const submissionBlockedByOffline =
+    submissionState === "idle" && connectionStatus === "offline";
   const donorName = [donor.firstName, donor.lastName].filter(Boolean).join(" ");
   const donorPhone = donor.phoneE164
-    ? (parsePhoneNumberFromString(donor.phoneE164)?.formatInternational() ??
-      donor.phoneE164)
+    ? formatPhoneForDisplay(donor.phoneE164)
     : null;
   const submitLabel =
-    submissionError?.kind === "unknown"
+    submissionState === "unknown-outcome"
       ? t("review.resend")
-      : submissionError
+      : feedbackState && feedbackState !== "submitting"
         ? t("common.retry")
         : t("review.submit");
-  const submissionMessage = submissionError
-    ? submissionTranslationKeys[submissionError.kind]
-    : null;
+  useDonationStepStatus(
+    3,
+    submissionPending
+      ? "in-progress"
+      : (feedbackState && blockingFeedbackStates.has(feedbackState)) ||
+          Object.keys(errors).length > 0
+        ? "error"
+        : "current",
+  );
+
+  useEffect(() => {
+    const handleOffline = () => setConnectionStatus("offline");
+    const handleOnline = () =>
+      setConnectionStatus((current) =>
+        current === "offline" ? "restored" : "online",
+      );
+
+    if (!navigator.onLine) {
+      handleOffline();
+    }
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
 
   useEffect(() => {
     if (isSubmitted) {
@@ -121,6 +204,7 @@ export function ReviewForm({
 
   return (
     <Form
+      aria-busy={submissionPending || undefined}
       aria-label={t("review.formLabel")}
       noValidate
       onSubmit={(event) => {
@@ -176,6 +260,8 @@ export function ReviewForm({
             {...register("consent")}
             aria-describedby={errors.consent ? "consent-error" : undefined}
             aria-invalid={errors.consent ? "true" : undefined}
+            disabled={submissionPending}
+            required
             size="sm"
             type="checkbox"
           />
@@ -188,17 +274,17 @@ export function ReviewForm({
         ) : null}
       </ConsentField>
 
-      <div aria-live="polite">
-        {submissionMessage ? (
-          <InlineAlert title={t(submissionMessage[0])} tone="error">
-            {t(submissionMessage[1])}
+      <SubmissionFeedback id="submission-feedback">
+        {feedback ? (
+          <InlineAlert title={t(feedback.title)} tone={feedback.tone}>
+            {t(feedback.message)}
           </InlineAlert>
         ) : null}
-      </div>
+      </SubmissionFeedback>
 
       <Actions>
         <Button
-          disabled={isSubmitting}
+          disabled={submissionPending}
           icon={<ArrowLeftIcon />}
           iconPosition="start"
           onClick={onBack}
@@ -206,7 +292,13 @@ export function ReviewForm({
         >
           {t("common.back")}
         </Button>
-        <Button loading={isSubmitting} type="submit">
+        <Button
+          aria-describedby={feedback ? "submission-feedback" : undefined}
+          disabled={submissionBlockedByOffline}
+          loading={submissionPending}
+          loadingLabel={t("review.submitting")}
+          type="submit"
+        >
           {submitLabel}
         </Button>
       </Actions>

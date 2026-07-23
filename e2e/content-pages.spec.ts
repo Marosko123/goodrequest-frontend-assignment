@@ -1,10 +1,16 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { mockReadApi, reachDetails, reachReview } from "./helpers";
+import {
+  measureCopyFeedback,
+  mockReadApi,
+  reachDetails,
+  reachReview,
+  settleLayout,
+} from "./helpers";
 
 const deploymentUrl =
   "https://marosko123.github.io/goodrequest-frontend-assignment/";
-const socialImageUrl = `${deploymentUrl}og-image.png`;
+const socialImageUrl = `${deploymentUrl}social/goodboy-og-sk.png`;
 
 async function expectPageMetadata(
   page: Page,
@@ -45,7 +51,7 @@ async function expectPageMetadata(
   );
   await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute(
     "content",
-    "GoodBoy – pomoc psom a útulkom",
+    "Logo GoodBoy a zlatý retriever na pláži.",
   );
   await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute(
     "content",
@@ -76,15 +82,137 @@ test("contact and project pages expose real content and live totals", async ({
 }) => {
   await page.goto("/contact/");
   await expect(
-    page.getByRole("link", { name: "hello@goodrequest.com" }),
-  ).toHaveAttribute("href", "mailto:hello@goodrequest.com");
+    page.getByRole("button", { name: "hello@goodrequest.com" }),
+  ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "+421 911 750 750" }),
-  ).toHaveAttribute("href", "tel:+421911750750");
+    page.getByRole("button", { name: "+421 911 750 750" }),
+  ).toBeVisible();
 
   await page.getByRole("link", { name: "O projekte" }).click();
+  await page.waitForURL("**/about/");
   await expect(page.getByText("12 200 €")).toBeVisible();
   await expect(page.getByText("1 028")).toBeVisible();
+});
+
+test("contact office address is centered on a phone viewport", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/contact/");
+
+  const metrics = await page
+    .locator('[data-contact="office"]')
+    .evaluate((section) => {
+      const link = section.querySelector("a");
+      if (!link) {
+        throw new Error("Office address link is missing");
+      }
+
+      const sectionBox = section.getBoundingClientRect();
+      const textRange = document.createRange();
+      textRange.selectNodeContents(link);
+      const textBox = textRange.getBoundingClientRect();
+
+      return {
+        centerDelta:
+          textBox.left +
+          textBox.width / 2 -
+          (sectionBox.left + sectionBox.width / 2),
+        textAlign: getComputedStyle(link).textAlign,
+      };
+    });
+
+  expect(metrics.textAlign).toBe("center");
+  expect(Math.abs(metrics.centerDelta)).toBeLessThan(1);
+});
+
+test("contact values copy with localized feedback centered above the clicked value", async ({
+  page,
+}) => {
+  const stubClipboard = () =>
+    page.evaluate(() => {
+      const copied: string[] = [];
+      Object.defineProperty(window, "__contactCopiedValues", {
+        configurable: true,
+        value: copied,
+      });
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: (value: string) => {
+            copied.push(value);
+            return Promise.resolve();
+          },
+        },
+      });
+    });
+
+  for (const [path, label] of [
+    ["/contact/", "Skopírované do schránky"],
+    ["/en/contact/", "Copied to clipboard"],
+    ["/cz/contact/", "Zkopírováno do schránky"],
+  ] as const) {
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(path);
+    await stubClipboard();
+    // The assertions below compare bounding boxes, so the page has to stop
+    // moving before the first one is measured.
+    await settleLayout(page);
+    const email = page.getByRole("button", { name: "hello@goodrequest.com" });
+    await email.click();
+    await expect(page.getByRole("status")).toHaveText(label);
+    const { value, description, notice } = await measureCopyFeedback(
+      page,
+      "email",
+    );
+
+    expect(
+      Math.abs(value.x + value.width / 2 - (notice.x + notice.width / 2)),
+    ).toBeLessThan(1);
+    expect(value.y - (notice.y + notice.height)).toBeCloseTo(8, 0);
+    expect(
+      notice.y - (description.y + description.height),
+    ).toBeGreaterThanOrEqual(4);
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          (
+            window as typeof window & { __contactCopiedValues: string[] }
+          ).__contactCopiedValues.at(-1),
+        ),
+      )
+      .toBe("hello@goodrequest.com");
+  }
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/contact/");
+  await stubClipboard();
+  const phone = page.getByRole("button", { name: "+421 911 750 750" });
+  await phone.click();
+  await expect(page.getByRole("status")).toHaveText("Skopírované do schránky");
+  const { value, description, notice } = await measureCopyFeedback(
+    page,
+    "phone",
+  );
+
+  expect(
+    Math.abs(value.x + value.width / 2 - (notice.x + notice.width / 2)),
+  ).toBeLessThan(1);
+  expect(value.y - (notice.y + notice.height)).toBeCloseTo(8, 0);
+  expect(
+    notice.y - (description.y + description.height),
+  ).toBeGreaterThanOrEqual(4);
+  expect(notice.x).toBeGreaterThanOrEqual(0);
+  expect(notice.x + notice.width).toBeLessThanOrEqual(390);
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        (
+          window as typeof window & { __contactCopiedValues: string[] }
+        ).__contactCopiedValues.at(-1),
+      ),
+    )
+    .toBe("+421 911 750 750");
 });
 
 test("form steps expose distinct and consistent social metadata", async ({
@@ -100,16 +228,16 @@ test("form steps expose distinct and consistent social metadata", async ({
   });
   await page.goto("/");
   await expectPageMetadata(page, {
-    title: "Vyberte formu pomoci",
+    title: "Pomôžte psom a útulkom",
     description:
-      "Podporte celú nadáciu GoodBoy alebo vybraný slovenský útulok.",
+      "Prispejte nadácii GoodBoy alebo konkrétnemu slovenskému útulku. Jednoducho si vyberte, komu a akou sumou pomôžete.",
     path: "",
     indexable: true,
   });
 
   await reachDetails(page);
   await expectPageMetadata(page, {
-    title: "Osobné údaje",
+    title: "Vaše údaje",
     description: "Doplňte údaje potrebné na odoslanie príspevku.",
     path: "details/",
     indexable: false,
@@ -117,7 +245,7 @@ test("form steps expose distinct and consistent social metadata", async ({
 
   await reachReview(page);
   await expectPageMetadata(page, {
-    title: "Potvrdenie príspevku",
+    title: "Skontrolujte príspevok",
     description: "Skontrolujte údaje a odošlite svoj príspevok.",
     path: "review/",
     indexable: false,
@@ -127,8 +255,8 @@ test("form steps expose distinct and consistent social metadata", async ({
   await page.getByRole("button", { name: "Odoslať formulár" }).click();
   await page.waitForURL("**/success/");
   await expectPageMetadata(page, {
-    title: "Ďakujeme",
-    description: "Príspevok bol úspešne prijatý.",
+    title: "Ďakujeme za pomoc",
+    description: "Váš príspevok sme úspešne prijali.",
     path: "success/",
     indexable: false,
   });

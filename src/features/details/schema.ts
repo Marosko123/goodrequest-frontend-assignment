@@ -1,87 +1,95 @@
 import type { TFunction } from "i18next";
-import { z } from "zod";
 
-import type { DonorDetails } from "@/domain/donation";
+import type { DonorDetails, PhoneCountry } from "@/domain/donation";
+import {
+  createEmailSchema,
+  createPersonNameSchema,
+  personNameLimits,
+} from "@/lib/validation/personal-details";
+import { z } from "@/lib/validation/zod";
 
-import { parsePhone, type PhoneErrorCode } from "./phone";
+import {
+  getCountryFromPhoneDialCode,
+  getPhoneErrorMessage,
+  parsePhone,
+} from "./phone";
 
-function normalizeName(value: string): string {
-  return value.trim().normalize("NFC");
-}
-
-function characterCount(value: string): number {
-  return [...value].length;
-}
-
-function normalizeEmailDomain(value: string): string {
-  const separatorIndex = value.lastIndexOf("@");
-  if (separatorIndex < 0) {
-    return value;
+function parseDetailsPhone(
+  phone: string,
+  phoneDialCode: string | undefined,
+  phoneCountry: PhoneCountry,
+) {
+  if (!phone.trim()) {
+    return parsePhone("", phoneCountry);
   }
-
-  return `${value.slice(0, separatorIndex)}@${value
-    .slice(separatorIndex + 1)
-    .toLowerCase()}`;
-}
-
-export function getPhoneErrorMessage(
-  code: PhoneErrorCode,
-  t: TFunction,
-): string {
-  switch (code) {
-    case "empty":
-      return t("details.phoneRequiredError");
-    case "characters":
-      return t("details.phoneCharactersError");
-    case "unsupportedCountry":
-      return t("details.phoneCountryError");
-    case "tooLong":
-      return t("details.phoneTooLongError");
-    case "invalid":
-      return t("details.phoneError");
+  if (phoneDialCode === undefined) {
+    return parsePhone(phone, phoneCountry);
   }
+  if (!getCountryFromPhoneDialCode(phoneDialCode)) {
+    return { ok: false, code: "unsupportedCountry" } as const;
+  }
+  return parsePhone(`+${phoneDialCode}${phone}`, phoneCountry);
 }
 
 export function createDetailsSchema(t: TFunction) {
-  const normalizedName = z.string().transform(normalizeName);
-  const optionalFirstName = normalizedName.refine(
-    (value) =>
-      characterCount(value) === 0 ||
-      (characterCount(value) >= 2 && characterCount(value) <= 20),
-    { message: t("details.firstNameError") },
-  );
-
-  return z
+  const inputSchema = z
     .object({
-      firstName: optionalFirstName,
-      lastName: normalizedName
-        .refine((value) => characterCount(value) >= 2, {
-          message: t("details.lastNameMinError"),
-        })
-        .refine((value) => characterCount(value) <= 30, {
-          message: t("details.lastNameMaxError"),
-        }),
-      email: z
-        .string()
-        .trim()
-        .max(254, t("details.emailTooLongError"))
-        .pipe(z.email(t("details.emailError")))
-        .transform(normalizeEmailDomain),
+      firstName: createPersonNameSchema({
+        ...personNameLimits.firstName,
+        error: t("details.firstNameError"),
+        optional: true,
+      }),
+      lastName: createPersonNameSchema({
+        ...personNameLimits.lastName,
+        error: t("details.lastNameError"),
+      }),
+      email: createEmailSchema({
+        invalid: t("details.emailError"),
+        tooLong: t("details.emailTooLongError"),
+      }),
+      phoneDialCode: z.optional(z.string()),
       phone: z.string(),
       phoneCountry: z.enum(["SK", "CZ"]),
     })
-    .superRefine((values, context) => {
-      const phone = parsePhone(values.phone, values.phoneCountry);
-      if (!phone.ok) {
-        context.addIssue({
-          code: "custom",
-          message: getPhoneErrorMessage(phone.code, t),
-          path: ["phone"],
-        });
-      }
-    })
-    .transform((values): DonorDetails => {
-      const phone = parsePhone(values.phone, values.phoneCountry);
+    .check(
+      z.superRefine((values, context) => {
+        const hasUnsupportedDialCode =
+          values.phoneDialCode !== undefined &&
+          !getCountryFromPhoneDialCode(values.phoneDialCode);
+        if (hasUnsupportedDialCode) {
+          context.addIssue({
+            code: "custom",
+            message: getPhoneErrorMessage("unsupportedCountry", t),
+            path: ["phoneDialCode"],
+          });
+        }
+
+        const phone = parseDetailsPhone(
+          values.phone,
+          values.phoneDialCode,
+          values.phoneCountry,
+        );
+        if (
+          !phone.ok &&
+          !(hasUnsupportedDialCode && phone.code === "unsupportedCountry")
+        ) {
+          context.addIssue({
+            code: "custom",
+            message: getPhoneErrorMessage(phone.code, t),
+            path: ["phone"],
+          });
+        }
+      }),
+    );
+
+  return z.pipe(
+    inputSchema,
+    z.transform<z.output<typeof inputSchema>, DonorDetails>((values) => {
+      const phone = parseDetailsPhone(
+        values.phone,
+        values.phoneDialCode,
+        values.phoneCountry,
+      );
       if (!phone.ok) {
         return z.NEVER;
       }
@@ -93,7 +101,12 @@ export function createDetailsSchema(t: TFunction) {
         phoneE164: phone.phoneE164,
         phoneCountry: phone.phoneCountry,
       };
-    });
+    }),
+  );
 }
 
-export type DetailsFormValues = z.input<ReturnType<typeof createDetailsSchema>>;
+type DetailsSchemaInput = z.input<ReturnType<typeof createDetailsSchema>>;
+
+export type DetailsFormValues = Omit<DetailsSchemaInput, "phoneDialCode"> & {
+  phoneDialCode: string;
+};

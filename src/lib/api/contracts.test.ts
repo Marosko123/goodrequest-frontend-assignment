@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { z } from "@/lib/validation/zod";
+
 import { contributionRequestSchema } from "./contracts";
 
 const contributor = {
@@ -8,6 +10,12 @@ const contributor = {
   email: "Jana@example.sk",
   phone: "+421901234567",
 };
+
+describe("runtime schema configuration", () => {
+  it("keeps Zod CSP-safe without runtime code generation", () => {
+    expect(z.config()).toMatchObject({ jitless: true });
+  });
+});
 
 describe("contributionRequestSchema", () => {
   it("accepts exactly one contributor with a supported E.164 phone", () => {
@@ -30,17 +38,76 @@ describe("contributionRequestSchema", () => {
     ).toBe(false);
   });
 
-  it("rejects multiple contributors and values above the donation limit", () => {
+  it.each([
+    { ...contributor, firstName: "Jana7" },
+    { ...contributor, lastName: "🐶" },
+    { ...contributor, email: "donor@goodrequest" },
+    { ...contributor, email: `${"a".repeat(65)}@goodrequest.sk` },
+  ])("rejects implausible contributor identity data", (value) => {
     expect(
       contributionRequestSchema.safeParse({
-        contributors: [contributor, contributor],
+        contributors: [value],
         value: 25,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts an omitted first name but enforces the surname length bounds", () => {
+    expect(
+      contributionRequestSchema.safeParse({
+        contributors: [
+          {
+            ...contributor,
+            firstName: "",
+            lastName: "李明",
+            email: "donor@goodrequest.sk",
+          },
+        ],
+        value: 25,
+      }).success,
+    ).toBe(true);
+
+    expect(
+      contributionRequestSchema.safeParse({
+        contributors: [
+          {
+            ...contributor,
+            firstName: "",
+            lastName: "李",
+            email: "donor@goodrequest.sk",
+          },
+        ],
+        value: 25,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("accepts the donation limit and rejects values above it", () => {
+    expect(
+      contributionRequestSchema.safeParse({
+        contributors: [contributor],
+        value: 999_999,
+      }).success,
+    ).toBe(true);
+    expect(
+      contributionRequestSchema.safeParse({
+        contributors: [contributor],
+        value: 999_999.01,
       }).success,
     ).toBe(false);
     expect(
       contributionRequestSchema.safeParse({
         contributors: [contributor],
-        value: 1_000_000.01,
+        value: 1_000_000,
+      }).success,
+    ).toBe(false);
+  });
+
+  it("rejects multiple contributors", () => {
+    expect(
+      contributionRequestSchema.safeParse({
+        contributors: [contributor, contributor],
+        value: 25,
       }).success,
     ).toBe(false);
   });

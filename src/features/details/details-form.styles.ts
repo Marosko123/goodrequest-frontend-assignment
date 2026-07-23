@@ -1,6 +1,6 @@
 import styled from "styled-components";
 
-import { feedbackEnter, interactiveControl } from "@/styles/fragments";
+import { fieldError, interactiveControl } from "@/styles/fragments";
 import { theme } from "@/styles/theme";
 
 export const Form = styled.form`
@@ -38,46 +38,12 @@ export const PhoneControl = styled.div`
   gap: ${theme.space[4]};
 `;
 
-export const CountryPicker = styled.span`
-  ${interactiveControl}
+export const CountryPicker = styled.div`
+  min-width: 0;
 
-  position: relative;
-  display: flex;
-  overflow: hidden;
-  align-items: center;
-  justify-content: center;
-  gap: ${theme.space[2]};
-  border: 1px solid transparent;
-  background: ${theme.colors.surface};
-
-  &:focus-within {
-    border-color: ${theme.colors.primaryPressed};
-    background: ${theme.colors.canvas};
-    box-shadow: ${theme.shadows.focus};
-  }
-
-  > svg[data-country] {
-    width: ${theme.sizes.iconMd};
-    height: ${theme.sizes.iconMd};
-  }
-
-  > svg[data-icon="chevron-down"] {
-    width: ${theme.sizes.iconSm};
-    height: ${theme.sizes.iconSm};
-    color: ${theme.colors.textTertiary};
-  }
-`;
-
-export const CountrySelect = styled.select`
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  border: 0;
-  opacity: 0;
-  cursor: pointer;
-
-  &:focus-visible {
-    outline: none;
+  [role="combobox"] {
+    width: 100%;
+    min-height: ${theme.sizes.controlXl};
   }
 `;
 
@@ -109,6 +75,22 @@ export const Prefix = styled.span`
   font: ${theme.typography.textMdRegular};
 `;
 
+export const PhoneDialCodeInput = styled.input`
+  width: 3ch;
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: ${theme.colors.textSecondary};
+  font: ${theme.typography.textMdRegular};
+  outline: none;
+  user-select: text;
+
+  &:focus-visible {
+    outline: none;
+  }
+`;
+
 export const PhoneInput = styled.input`
   width: 100%;
   min-width: 0;
@@ -117,22 +99,19 @@ export const PhoneInput = styled.input`
   background: transparent;
   font: ${theme.typography.textMdRegular};
   outline: none;
+  user-select: text;
 
   &:focus-visible {
     outline: none;
   }
 
   &::placeholder {
-    color: ${theme.colors.textMuted};
+    color: ${theme.colors.textTertiary};
   }
 `;
 
 export const ErrorMessage = styled.p`
-  ${feedbackEnter}
-
-  margin: 0;
-  color: ${theme.colors.danger};
-  font: ${theme.typography.textSmRegular};
+  ${fieldError}
 `;
 
 export const Actions = styled.div`

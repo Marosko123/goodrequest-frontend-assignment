@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { focusManager } from "@tanstack/react-query";
 import {
   act,
   fireEvent,
@@ -13,7 +13,6 @@ import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DonationSelection } from "@/domain/donation";
-import { queryKeys } from "@/lib/api/queries";
 import { server } from "@/test/server";
 
 import { SelectionForm } from "./selection-form";
@@ -23,15 +22,8 @@ const sheltersUrl =
 
 function renderForm(
   onComplete = vi.fn<(selection: DonationSelection) => void>(),
-  queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  }),
 ) {
-  render(
-    <QueryClientProvider client={queryClient}>
-      <SelectionForm onComplete={onComplete} />
-    </QueryClientProvider>,
-  );
+  render(<SelectionForm onComplete={onComplete} />);
 
   return onComplete;
 }
@@ -49,6 +41,26 @@ describe("SelectionForm", () => {
     expect(screen.getByRole("textbox", { name: "Vlastná suma" })).toHaveValue(
       "",
     );
+  });
+
+  it("does not request shelters before the targeted-shelter option is selected", async () => {
+    let requestCount = 0;
+    server.use(
+      http.get(sheltersUrl, () => {
+        requestCount += 1;
+        return HttpResponse.json({ shelters: [] });
+      }),
+    );
+    renderForm();
+    const user = userEvent.setup();
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(requestCount).toBe(0);
+
+    await user.click(
+      screen.getByRole("radio", { name: "Prispieť konkrétnemu útulku" }),
+    );
+    await waitFor(() => expect(requestCount).toBe(1));
   });
 
   it("rejects a negative paste atomically and reports it immediately", async () => {
@@ -86,15 +98,24 @@ describe("SelectionForm", () => {
     expect(amount).toHaveValue("1234,56");
   });
 
-  it("replaces the old value with a preset after rejecting an over-limit edit", async () => {
+  it("rejects one million immediately in both locales and accepts a preset", async () => {
     renderForm();
     const user = userEvent.setup();
     const amount = screen.getByRole("textbox", { name: "Vlastná suma" });
 
     await user.click(amount);
-    fireEvent.change(amount, { target: { value: "1234,56" } });
-    fireEvent.change(amount, { target: { value: "1000000,01" } });
-    expect(amount).toHaveValue("1234,56");
+    fireEvent.change(amount, { target: { value: "999999" } });
+    fireEvent.change(amount, { target: { value: "1000000" } });
+    expect(amount).toHaveValue("999999");
+    expect(amount).toHaveAccessibleDescription(
+      "Maximálna výška príspevku je 999 999 €.",
+    );
+
+    await act(() => i18next.changeLanguage("en"));
+    expect(amount).toHaveAccessibleDescription(
+      "The maximum contribution is 999,999 €.",
+    );
+    await act(() => i18next.changeLanguage("sk"));
 
     await user.click(screen.getByRole("button", { name: /20\s€/u }));
 
@@ -159,7 +180,10 @@ describe("SelectionForm", () => {
       screen.getByRole("radio", { name: "Prispieť konkrétnemu útulku" }),
     );
     const select = await screen.findByRole("combobox", { name: "Útulok" });
-    await user.selectOptions(select, "4");
+    await user.click(select);
+    await user.click(
+      screen.getByRole("option", { name: "Útulok pre psov - TEZAS" }),
+    );
     await user.click(screen.getByRole("button", { name: /50\s€/u }));
     await user.click(screen.getByRole("button", { name: "Pokračovať" }));
 
@@ -197,6 +221,52 @@ describe("SelectionForm", () => {
     );
   });
 
+  it("surfaces a failed shelter load and recovers through the retry action", async () => {
+    let failRequest = true;
+    server.use(
+      http.get(sheltersUrl, () =>
+        failRequest
+          ? new HttpResponse(null, { status: 503 })
+          : HttpResponse.json({
+              shelters: [{ id: 4, name: "Útulok pre psov - TEZAS" }],
+            }),
+      ),
+    );
+    renderForm();
+    const user = userEvent.setup();
+
+    await user.click(
+      screen.getByRole("radio", { name: "Prispieť konkrétnemu útulku" }),
+    );
+
+    // The read policy retries a 5xx once, so the alert only appears after the
+    // second failure settles.
+    const alert = await screen.findByRole(
+      "alert",
+      { name: /Útulky sa nepodarilo načítať/u },
+      { timeout: 5000 },
+    );
+    expect(alert).toBeVisible();
+    expect(screen.getByRole("combobox", { name: "Útulok" })).toBeDisabled();
+
+    failRequest = false;
+    await user.click(
+      within(alert).getByRole("button", { name: "Skúsiť znova" }),
+    );
+
+    const select = await screen.findByRole("combobox", { name: "Útulok" });
+    await waitFor(() => expect(select).toBeEnabled());
+    expect(
+      screen.queryByRole("alert", { name: /Útulky sa nepodarilo načítať/u }),
+    ).not.toBeInTheDocument();
+
+    await user.click(select);
+    await user.click(
+      screen.getByRole("option", { name: "Útulok pre psov - TEZAS" }),
+    );
+    expect(select).toHaveAttribute("data-value", "4");
+  });
+
   it("explains an empty shelter list and disables the empty control", async () => {
     server.use(
       http.get(sheltersUrl, () => HttpResponse.json({ shelters: [] })),
@@ -221,26 +291,29 @@ describe("SelectionForm", () => {
         HttpResponse.json({ shelters: availableShelters }),
       ),
     );
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    });
-    renderForm(vi.fn(), queryClient);
+    renderForm();
     const user = userEvent.setup();
 
     await user.click(
       screen.getByRole("radio", { name: "Prispieť konkrétnemu útulku" }),
     );
     const select = await screen.findByRole("combobox", { name: "Útulok" });
-    await user.selectOptions(select, "4");
-    expect(select).toHaveValue("4");
+    await user.click(select);
+    await user.click(
+      screen.getByRole("option", { name: "Útulok pre psov - TEZAS" }),
+    );
+    expect(select).toHaveAttribute("data-value", "4");
 
     availableShelters = [];
-    await act(() =>
-      queryClient.invalidateQueries({ queryKey: queryKeys.shelters }),
-    );
+    const dateNow = vi
+      .spyOn(Date, "now")
+      .mockReturnValue(Date.now() + 11 * 60 * 1000);
+    focusManager.setFocused(false);
+    focusManager.setFocused(true);
 
-    await waitFor(() => expect(select).toHaveValue(""));
+    await waitFor(() => expect(select).toHaveAttribute("data-value", ""));
     expect(select).toBeDisabled();
+    dateNow.mockRestore();
   });
 
   it("focuses the invalid amount and explains the error", async () => {

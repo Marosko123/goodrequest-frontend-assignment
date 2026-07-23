@@ -1,6 +1,10 @@
 import styled from "styled-components";
 
-import { pressable, visuallyHidden } from "@/styles/fragments";
+import {
+  nonSelectableControl,
+  pressable,
+  visuallyHidden,
+} from "@/styles/fragments";
 import { theme } from "@/styles/theme";
 
 export const Form = styled.form`
@@ -94,6 +98,8 @@ export const TargetOptions = styled.div`
 `;
 
 export const TargetOption = styled.label`
+  ${nonSelectableControl}
+
   position: relative;
   z-index: 1;
   display: grid;
@@ -118,13 +124,17 @@ export const TargetOption = styled.label`
   }
 
   &[data-selected="true"] {
-    color: #fff;
+    color: ${theme.colors.onAccent};
   }
 
   @media (hover: hover) and (pointer: fine) {
     &:hover:not([data-selected="true"]) {
       color: ${theme.colors.primary};
     }
+  }
+
+  &:active:not([data-selected="true"]) {
+    color: ${theme.colors.primaryPressed};
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -162,6 +172,10 @@ export const ShelterSection = styled.div`
   gap: ${theme.space[4]};
   min-height: 0;
   overflow: hidden;
+
+  ${ShelterRegion}[data-expanded="true"] & {
+    overflow: visible;
+  }
 `;
 
 export const CustomAmount = styled.div`
@@ -198,6 +212,7 @@ export const CustomAmount = styled.div`
     font-size: var(--amount-font-size);
     letter-spacing: ${theme.typography.trackingHeading};
     text-align: center;
+    user-select: text;
   }
 
   input:focus-visible {
@@ -252,7 +267,7 @@ export const Preset = styled.button`
 
   &[aria-pressed="true"] {
     background: ${theme.colors.primary};
-    color: #fff;
+    color: ${theme.colors.onAccent};
   }
 
   @media (hover: hover) and (pointer: fine) {

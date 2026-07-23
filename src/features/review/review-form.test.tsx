@@ -7,10 +7,11 @@ import {
 } from "@testing-library/react";
 import i18next from "i18next";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { DonationSelection, DonorDetails } from "@/domain/donation";
 import { ApiError } from "@/lib/api/client";
+import { theme } from "@/styles/theme";
 
 import { ReviewForm } from "./review-form";
 
@@ -51,6 +52,10 @@ function renderForm({
   return { ...view, onSuccess, submit };
 }
 
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
 describe("ReviewForm", () => {
   it("shows a domain-consistent summary for both contribution targets", () => {
     const { unmount } = renderForm();
@@ -68,14 +73,48 @@ describe("ReviewForm", () => {
     expect(screen.getByText("20 €")).toBeInTheDocument();
   });
 
-  it("requires consent and focuses it before submission", async () => {
-    const { submit } = renderForm();
+  it("matches the consent label geometry and error treatment", async () => {
+    renderForm();
     const user = userEvent.setup();
+    const consent = screen.getByRole("checkbox", { name: /súhlasím/i });
+    const consentLabel = consent.closest("label");
+
+    expect(consentLabel).toHaveStyleRule("font", theme.typography.textSmMedium);
+    expect(consentLabel).toHaveStyleRule("align-items", "flex-start");
+    expect(consentLabel).toHaveStyleRule("margin-block-start", "2px", {
+      modifier: "& > input",
+    });
 
     await user.click(screen.getByRole("button", { name: "Odoslať formulár" }));
 
-    expect(screen.getByRole("checkbox", { name: /súhlasím/i })).toHaveFocus();
+    expect(consentLabel).toHaveStyleRule("color", theme.colors.dangerHover, {
+      modifier: '&:has(input[aria-invalid="true"]) > span',
+    });
+  });
+
+  it("requires consent and focuses it before submission", async () => {
+    const { submit } = renderForm();
+    const user = userEvent.setup();
+    const consent = screen.getByRole("checkbox", { name: /súhlasím/i });
+
+    await user.click(screen.getByRole("button", { name: "Odoslať formulár" }));
+
+    expect(consent).toBeRequired();
+    expect(consent).toHaveFocus();
+    expect(consent).toHaveAttribute("aria-invalid", "true");
+    expect(consent).toHaveAttribute("aria-describedby", "consent-error");
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Na odoslanie príspevku je potrebný Váš súhlas.",
+    );
     expect(submit).not.toHaveBeenCalled();
+
+    await user.click(consent);
+
+    await waitFor(() => expect(consent).not.toHaveAttribute("aria-invalid"));
+    expect(consent).not.toHaveAttribute("aria-describedby");
+    expect(
+      screen.queryByText("Na odoslanie príspevku je potrebný Váš súhlas."),
+    ).not.toBeInTheDocument();
   });
 
   it("uses a synchronous lock against duplicate submissions", async () => {
@@ -95,11 +134,26 @@ describe("ReviewForm", () => {
     fireEvent.submit(form);
 
     await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+    expect(form).toHaveAttribute("aria-busy", "true");
+    expect(
+      screen.getByRole("status", { name: "Čakáme na potvrdenie" }),
+    ).toHaveAttribute("data-tone", "info");
+    expect(screen.getByRole("button", { name: "Odosielame…" })).toHaveAttribute(
+      "aria-describedby",
+      "submission-feedback",
+    );
+    await waitFor(() =>
+      expect(
+        screen.getByRole("checkbox", { name: /súhlasím/i }),
+      ).toBeDisabled(),
+    );
     resolveRequest?.(acceptedResponse);
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
   });
 
   it("explains an unknown timeout and retries only after another action", async () => {
+    let online = true;
+    vi.spyOn(navigator, "onLine", "get").mockImplementation(() => online);
     const submit = vi
       .fn()
       .mockRejectedValueOnce(new ApiError("timeout", "timeout"))
@@ -116,6 +170,23 @@ describe("ReviewForm", () => {
     expect(screen.getByText(/duplicitný príspevok/i)).toBeVisible();
     expect(submit).toHaveBeenCalledTimes(1);
     expect(onSuccess).not.toHaveBeenCalled();
+    expect(screen.getByRole("checkbox", { name: /súhlasím/i })).toBeEnabled();
+    expect(
+      screen.getByRole("status", {
+        name: "Výsledok odoslania nepoznáme",
+      }),
+    ).toHaveAttribute("data-tone", "warning");
+
+    online = false;
+    await act(() => window.dispatchEvent(new Event("offline")));
+    online = true;
+    await act(() => window.dispatchEvent(new Event("online")));
+    expect(
+      screen.getByText("Výsledok odoslania nepoznáme"),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Pripojenie je obnovené"),
+    ).not.toBeInTheDocument();
 
     await act(() => i18next.changeLanguage("en"));
     expect(screen.getByText("The submission outcome is unknown")).toBeVisible();
@@ -126,16 +197,28 @@ describe("ReviewForm", () => {
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
   });
 
-  it("does not dispatch a request while the browser is already offline", async () => {
+  it("restores connectivity without dispatching an automatic request", async () => {
+    let online = false;
     const submit = vi.fn().mockResolvedValue(acceptedResponse);
-    vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
-    renderForm({ submit });
+    vi.spyOn(navigator, "onLine", "get").mockImplementation(() => online);
+    const { onSuccess } = renderForm({ submit });
     const user = userEvent.setup();
 
-    await user.click(screen.getByRole("checkbox", { name: /súhlasím/i }));
-    await user.click(screen.getByRole("button", { name: "Odoslať formulár" }));
-
     expect(await screen.findByText("Ste offline")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Skúsiť znova" })).toBeDisabled();
+    await user.click(screen.getByRole("checkbox", { name: /súhlasím/i }));
     expect(submit).not.toHaveBeenCalled();
+
+    online = true;
+    await act(() => window.dispatchEvent(new Event("online")));
+
+    expect(await screen.findByText("Pripojenie je obnovené")).toBeVisible();
+    expect(submit).not.toHaveBeenCalled();
+    const retry = screen.getByRole("button", { name: "Skúsiť znova" });
+    expect(retry).toBeEnabled();
+
+    await user.click(retry);
+    await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
   });
 });

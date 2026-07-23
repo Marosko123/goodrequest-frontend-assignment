@@ -1,9 +1,25 @@
-import styled, { keyframes } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
 
 import { theme } from "@/styles/theme";
 
 const shimmer = keyframes`
   to { background-position: -200% 0; }
+`;
+
+/*
+ * Shared by the loaded grid and its skeleton. They must occupy identical
+ * space or swapping one for the other shifts the layout.
+ */
+const statsLayout = css`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: ${theme.space[8]};
+  max-width: 76rem;
+  min-height: 6.5rem;
+
+  @media (width <= 38rem) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 export const Content = styled.div`
@@ -12,11 +28,8 @@ export const Content = styled.div`
 `;
 
 export const StatsGrid = styled.dl`
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: ${theme.space[8]};
-  max-width: 76rem;
-  min-height: 6.5rem;
+  ${statsLayout}
+
   margin: 0;
 
   > div {
@@ -40,8 +53,6 @@ export const StatsGrid = styled.dl`
   }
 
   @media (width <= 38rem) {
-    grid-template-columns: 1fr;
-
     dd {
       font: ${theme.typography.headingXlSemiboldCompact};
     }
@@ -49,15 +60,7 @@ export const StatsGrid = styled.dl`
 `;
 
 export const LoadingGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: ${theme.space[8]};
-  max-width: 76rem;
-  min-height: 6.5rem;
-
-  @media (width <= 38rem) {
-    grid-template-columns: 1fr;
-  }
+  ${statsLayout}
 `;
 
 export const Skeleton = styled.div`

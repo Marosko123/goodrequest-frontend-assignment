@@ -4,13 +4,8 @@ import {
   queryOptions,
 } from "@tanstack/react-query";
 
-import {
-  ApiError,
-  getResults,
-  getShelters,
-  submitContribution,
-} from "./client";
 import type { ContributionRequest } from "./contracts";
+import { ApiError } from "./errors";
 import { assertContributionAccepted } from "./outcome";
 
 export const queryKeys = {
@@ -32,10 +27,11 @@ export function shouldRetryRead(failureCount: number, error: unknown): boolean {
   );
 }
 
-export const sheltersQueryOptions = () =>
+export const sheltersQueryOptions = (enabled = true) =>
   queryOptions({
     queryKey: queryKeys.shelters,
-    queryFn: getShelters,
+    queryFn: async () => (await import("./client")).getShelters(),
+    enabled,
     staleTime: 10 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     retry: shouldRetryRead,
@@ -44,7 +40,7 @@ export const sheltersQueryOptions = () =>
 export const resultsQueryOptions = () =>
   queryOptions({
     queryKey: queryKeys.results,
-    queryFn: getResults,
+    queryFn: async () => (await import("./client")).getResults(),
     staleTime: 60 * 1000,
     gcTime: 10 * 60 * 1000,
     refetchInterval: 60 * 1000,
@@ -57,6 +53,7 @@ export const resultsQueryOptions = () =>
 export const contributionMutationOptions = (queryClient: QueryClient) =>
   mutationOptions({
     mutationFn: async (request: ContributionRequest) => {
+      const { submitContribution } = await import("./client");
       const response = await submitContribution(request);
       assertContributionAccepted(response);
       return response;

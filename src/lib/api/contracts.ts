@@ -1,6 +1,10 @@
-import { z } from "zod";
-
 import { MAX_DONATION_CENTS } from "@/domain/donation";
+import {
+  createEmailSchema,
+  createPersonNameSchema,
+  personNameLimits,
+} from "@/lib/validation/personal-details";
+import { type ZodMiniType, z } from "@/lib/validation/zod";
 
 import type { paths } from "./generated";
 
@@ -26,72 +30,70 @@ export type ContributionResponse = JsonResponse<
   "post"
 >;
 
-const shelterSchema = z
-  .object({
-    id: z.number().int().positive(),
-    name: z.string().trim().min(1),
-  })
-  .strict();
+const shelterSchema = z.strictObject({
+  id: z.number().check(z.int()).check(z.positive()),
+  name: z.string().check(z.trim()).check(z.minLength(1)),
+});
 
 export const sheltersResponseSchema = z
-  .object({
-    shelters: z.array(shelterSchema).optional().default([]),
+  .strictObject({
+    shelters: z._default(z.optional(z.array(shelterSchema)), []),
   })
-  .strict()
-  .superRefine(({ shelters }, context) => {
-    const ids = new Set<number>();
-    for (const shelter of shelters) {
-      if (ids.has(shelter.id)) {
-        context.addIssue({
-          code: "custom",
-          message: `Duplicate shelter ID: ${shelter.id}`,
-          path: ["shelters"],
-        });
+  .check(
+    z.superRefine(({ shelters }, context) => {
+      const ids = new Set<number>();
+      for (const shelter of shelters) {
+        if (ids.has(shelter.id)) {
+          context.addIssue({
+            code: "custom",
+            message: `Duplicate shelter ID: ${shelter.id}`,
+            path: ["shelters"],
+          });
+        }
+        ids.add(shelter.id);
       }
-      ids.add(shelter.id);
-    }
-  }) satisfies z.ZodType<GeneratedSheltersResponse>;
+    }),
+  ) satisfies ZodMiniType<GeneratedSheltersResponse>;
 
-export const resultsResponseSchema = z
-  .object({
-    contributors: z.number().int().nonnegative(),
-    contribution: z.number().finite().nonnegative().nullable(),
-  })
-  .strict() satisfies z.ZodType<GeneratedResultsResponse>;
+export const resultsResponseSchema = z.strictObject({
+  contributors: z.number().check(z.int()).check(z.nonnegative()),
+  contribution: z.nullable(z.number().check(z.nonnegative())),
+}) satisfies ZodMiniType<GeneratedResultsResponse>;
 
-const contributionMessageSchema = z
-  .object({
-    message: z.string().min(1),
-    type: z.enum(["ERROR", "WARNING", "INFO", "SUCCESS"]),
-  })
-  .strict();
+const contributionMessageSchema = z.strictObject({
+  message: z.string().check(z.minLength(1)),
+  type: z.enum(["ERROR", "WARNING", "INFO", "SUCCESS"]),
+});
 
-export const contributionResponseSchema = z
-  .object({
-    messages: z.array(contributionMessageSchema),
-  })
-  .strict() satisfies z.ZodType<ContributionResponse>;
+export const contributionResponseSchema = z.strictObject({
+  messages: z.array(contributionMessageSchema),
+}) satisfies ZodMiniType<ContributionResponse>;
 
-export const contributionRequestSchema = z
-  .object({
-    contributors: z
-      .array(
-        z
-          .object({
-            firstName: z.string(),
-            lastName: z.string().min(1),
-            email: z.email(),
-            phone: z.string().regex(/^\+(?:420|421)\d{9}$/u),
-          })
-          .strict(),
-      )
-      .length(1),
-    shelterID: z.number().int().positive().optional(),
-    value: z
-      .number()
-      .finite()
-      .positive()
-      .multipleOf(0.01)
-      .max(MAX_DONATION_CENTS / 100),
-  })
-  .strict();
+export const contributionRequestSchema = z.strictObject({
+  contributors: z
+    .array(
+      z.strictObject({
+        firstName: createPersonNameSchema({
+          ...personNameLimits.firstName,
+          error: "Invalid first name.",
+          optional: true,
+        }),
+        lastName: createPersonNameSchema({
+          ...personNameLimits.lastName,
+          error: "Invalid last name.",
+        }),
+        email: createEmailSchema({
+          invalid: "Invalid email address.",
+          tooLong: "The email address is too long.",
+        }),
+        phone: z.string().check(z.regex(/^\+(?:420|421)\d{9}$/u)),
+      }),
+    )
+    .check(z.length(1)),
+  shelterID: z.optional(z.number().check(z.int()).check(z.positive())),
+  value: z
+    .number()
+    .check(z.positive())
+    .check(z.multipleOf(0.01))
+    .check(z.maximum(MAX_DONATION_CENTS / 100)),
+});

@@ -1,6 +1,6 @@
 import styled, { keyframes } from "styled-components";
 
-import { feedbackEnter } from "@/styles/fragments";
+import { fieldError, nonSelectableControl } from "@/styles/fragments";
 import { theme } from "@/styles/theme";
 
 const blockEnter = keyframes`
@@ -95,23 +95,44 @@ export const ConsentField = styled.div`
 `;
 
 export const ConsentLabel = styled.label`
+  ${nonSelectableControl}
+
   display: flex;
   gap: ${theme.space[2]};
-  align-items: center;
-  font: ${theme.typography.textSmRegular};
+  align-items: flex-start;
+  font: ${theme.typography.textSmMedium};
   cursor: pointer;
 
+  > input {
+    margin-block-start: 2px;
+  }
+
+  &:has(input[aria-invalid="true"]) > span {
+    color: ${theme.colors.dangerHover};
+  }
+
+  &:has(input:disabled) {
+    cursor: not-allowed;
+  }
+
   @media (pointer: coarse) {
-    min-height: 2.75rem;
+    min-height: ${theme.sizes.tapTarget};
   }
 `;
 
+// Indented to align under the consent text, clearing the checkbox gutter.
 export const ErrorMessage = styled.p`
-  ${feedbackEnter}
+  ${fieldError}
 
-  margin: 0 0 0 ${theme.space[6]};
-  color: ${theme.colors.dangerHover};
-  font: ${theme.typography.textSmRegular};
+  margin-inline-start: ${theme.space[6]};
+`;
+
+export const SubmissionFeedback = styled.div`
+  padding-block-start: ${theme.space[6]};
+
+  &:empty {
+    display: none;
+  }
 `;
 
 export const Actions = styled.div`

@@ -10,6 +10,7 @@ import {
   contributionMutationOptions,
   queryKeys,
   resultsQueryOptions,
+  sheltersQueryOptions,
   shouldRetryRead,
 } from "./queries";
 
@@ -74,6 +75,13 @@ describe("results refresh policy", () => {
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
     });
+  });
+});
+
+describe("shelters loading policy", () => {
+  it("can stay disabled until the targeted-shelter option is selected", () => {
+    expect(sheltersQueryOptions(false).enabled).toBe(false);
+    expect(sheltersQueryOptions().enabled).toBe(true);
   });
 });
 

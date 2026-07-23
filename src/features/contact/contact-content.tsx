@@ -1,14 +1,18 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import contactDog from "@/assets/contact-dog.jpg";
+import contactDogDesktop from "@/assets/contact-dog-desktop.webp";
+import contactDogMobile from "@/assets/contact-dog-mobile.webp";
 import { MailIcon, MarkerIcon, PhoneIcon } from "@/components/ui/icons";
 
 import {
   ContactGrid,
   ContactImage,
   ContactItem,
+  CopyFeedback,
+  CopyValue,
   Icon,
   Page,
 } from "./contact-content.styles";
@@ -47,6 +51,9 @@ function ContactIcon({ type }: { type: ContactItem["icon"] }) {
 
 export function ContactContent() {
   const { t } = useTranslation();
+  const [copiedValue, setCopiedValue] = useState<string | null>(null);
+  const copyRequest = useRef(0);
+  const feedbackTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const copy = {
     email: {
       title: t("contact.emailTitle"),
@@ -65,6 +72,50 @@ export function ContactContent() {
     },
   };
 
+  useEffect(() => {
+    return () => {
+      copyRequest.current += 1;
+
+      if (feedbackTimer.current) {
+        clearTimeout(feedbackTimer.current);
+      }
+    };
+  }, []);
+
+  const clearFeedback = () => {
+    if (feedbackTimer.current) {
+      clearTimeout(feedbackTimer.current);
+      feedbackTimer.current = null;
+    }
+
+    setCopiedValue(null);
+  };
+
+  const handleCopy = async (value: string) => {
+    const requestId = ++copyRequest.current;
+    clearFeedback();
+
+    if (!navigator.clipboard?.writeText) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(value);
+    } catch {
+      return;
+    }
+
+    if (requestId !== copyRequest.current) {
+      return;
+    }
+
+    setCopiedValue(value);
+    feedbackTimer.current = setTimeout(() => {
+      setCopiedValue(null);
+      feedbackTimer.current = null;
+    }, 1_500);
+  };
+
   return (
     <Page>
       <h1>{t("contact.title")}</h1>
@@ -78,19 +129,47 @@ export function ContactContent() {
               </Icon>
               <h2>{itemCopy.title}</h2>
               <p>{itemCopy.description}</p>
-              <a href={item.href}>{itemCopy.value}</a>
+              {item.icon === "office" ? (
+                <a href={item.href}>{itemCopy.value}</a>
+              ) : (
+                <CopyValue>
+                  {copiedValue === itemCopy.value ? (
+                    <CopyFeedback aria-live="polite" role="status">
+                      {t("contact.copiedToClipboard")}
+                    </CopyFeedback>
+                  ) : null}
+                  <button
+                    onClick={() => void handleCopy(itemCopy.value)}
+                    type="button"
+                  >
+                    {itemCopy.value}
+                  </button>
+                </CopyValue>
+              )}
             </ContactItem>
           );
         })}
       </ContactGrid>
-      <ContactImage
-        alt={t("media.contactDog")}
-        height={1706}
-        priority
-        sizes="(max-width: 900px) 100vw, 82rem"
-        src={contactDog}
-        width={2559}
-      />
+      <picture>
+        <source
+          media="(width > 48rem)"
+          srcSet={contactDogDesktop.src}
+          type="image/webp"
+        />
+        <ContactImage
+          alt={t("media.contactDog")}
+          decoding="async"
+          draggable={false}
+          height={contactDogMobile.height}
+          loading="lazy"
+          src={contactDogMobile.src}
+          style={{
+            "--media-blur-desktop": `url(${contactDogDesktop.blurDataURL})`,
+            "--media-blur-mobile": `url(${contactDogMobile.blurDataURL})`,
+          }}
+          width={contactDogMobile.width}
+        />
+      </picture>
     </Page>
   );
 }

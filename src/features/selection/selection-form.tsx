@@ -1,37 +1,44 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, type CSSProperties } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
+import { useLazyZodResolver } from "@/lib/validation/use-lazy-zod-resolver";
+
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon, ArrowRightIcon } from "@/components/ui/icons";
+import { useDonationStepStatus } from "@/components/layout/donation-progress-context";
 import {
   FormErrorSummary,
   type FormErrorItem,
 } from "@/components/ui/form-error-summary";
-import { InlineAlert } from "@/components/ui/inline-alert";
-import { SelectField } from "@/components/ui/select-field";
+import { Dropdown, type DropdownOption } from "@/components/ui/dropdown";
 import { TextField } from "@/components/ui/text-field";
 import type { DonationSelection, Shelter } from "@/domain/donation";
 import type { SelectionDraft } from "@/features/donation-flow/state";
 import { formatCurrency } from "@/i18n/format";
-import { sheltersQueryOptions } from "@/lib/api/queries";
+import { getAppLocale } from "@/i18n/config";
+import type { DonationRoutePrefetchIntent } from "@/lib/navigation/use-donation-route-prefetch";
 
 import {
   formatAmountInput,
+  getAmountErrorMessage,
   normalizeAmountEdit,
   normalizeAmountOnBlur,
+  parseDonationAmount,
   parseAmountToCents,
   type AmountErrorCode,
 } from "./amount";
-import {
-  createSelectionSchema,
-  getAmountErrorMessage,
-  type SelectionFormValues,
-} from "./schema";
+import type { SelectionFormValues } from "./schema";
 import {
   Actions,
   AmountFieldset,
@@ -50,6 +57,8 @@ import {
 
 const amountPresets = [5, 10, 20, 30, 50, 100] as const;
 const emptyShelters: readonly Shelter[] = [];
+const noShelterOptions: readonly DropdownOption<string>[] = [];
+const ShelterQueryField = lazy(() => import("./shelter-query-field"));
 
 function getDefaultValues(
   initialDraft?: SelectionDraft,
@@ -78,19 +87,23 @@ export function SelectionForm({
   initialValue,
   onDraftChange,
   onComplete,
+  nextStepPrefetch,
 }: {
   initialDraft?: SelectionDraft;
   initialValue?: DonationSelection;
   onDraftChange?: (draft: SelectionDraft) => void;
   onComplete: (selection: DonationSelection) => void;
+  nextStepPrefetch?: DonationRoutePrefetchIntent;
 }) {
   const { i18n, t } = useTranslation();
-  const locale = i18n.resolvedLanguage === "en" ? "en" : "sk";
-  const sheltersQuery = useQuery(sheltersQueryOptions());
-  const shelters = sheltersQuery.data ?? emptyShelters;
-  const schema = useMemo(
-    () => createSelectionSchema(shelters, t),
-    [shelters, t],
+  const locale = getAppLocale(i18n.resolvedLanguage);
+  const [shelters, setShelters] = useState<readonly Shelter[]>(emptyShelters);
+  const [sheltersError, setSheltersError] = useState(false);
+  const [sheltersActivated, setSheltersActivated] = useState(
+    initialDraft?.target === "shelter" || initialValue?.target === "shelter",
+  );
+  const resolver = useLazyZodResolver<SelectionFormValues, DonationSelection>(
+    async () => (await import("./schema")).createSelectionSchema(shelters, t),
   );
   const {
     control,
@@ -103,22 +116,27 @@ export function SelectionForm({
     trigger,
   } = useForm<SelectionFormValues, unknown, DonationSelection>({
     defaultValues: getDefaultValues(initialDraft, initialValue),
-    resolver: zodResolver(schema),
+    resolver,
     mode: "onBlur",
     reValidateMode: "onChange",
     shouldFocusError: true,
   });
 
   const target = useWatch({ control, name: "target" });
-  const shelterId = useWatch({ control, name: "shelterId" });
   const amount = useWatch({ control, name: "amount" });
   const selectedAmountCents = parseAmountToCents(amount);
   const previousLanguage = useRef(i18n.resolvedLanguage);
-  const hasNoShelters = sheltersQuery.isSuccess && shelters.length === 0;
   const amountStyle = {
     "--amount-characters": Math.max(1, Math.min(amount.length, 10)),
   } as CSSProperties;
   const errorItems: FormErrorItem[] = [];
+  const handleShelterQueryChange = useCallback(
+    (nextShelters: readonly Shelter[], isError: boolean) => {
+      setShelters(nextShelters);
+      setSheltersError(isError);
+    },
+    [],
+  );
 
   const updateAmount = (rawValue: string) => {
     const result = normalizeAmountEdit(rawValue, locale);
@@ -131,6 +149,9 @@ export function SelectionForm({
       return;
     }
 
+    if (parseDonationAmount(result.value).ok) {
+      clearErrors("amount");
+    }
     setValue("amount", result.value, {
       shouldDirty: true,
       shouldValidate: Boolean(errors.amount),
@@ -192,28 +213,6 @@ export function SelectionForm({
     }
   }, [amount, errors.amount, locale, setValue]);
 
-  useEffect(() => {
-    if (
-      !sheltersQuery.isSuccess ||
-      !shelterId ||
-      shelters.some((shelter) => shelter.id.toString() === shelterId)
-    ) {
-      return;
-    }
-
-    setValue("shelterId", null, {
-      shouldDirty: true,
-      shouldValidate: isSubmitted || Boolean(errors.shelterId),
-    });
-  }, [
-    errors.shelterId,
-    isSubmitted,
-    setValue,
-    shelterId,
-    shelters,
-    sheltersQuery.isSuccess,
-  ]);
-
   if (errors.shelterId?.message) {
     errorItems.push({
       fieldId: "shelter-id",
@@ -228,6 +227,37 @@ export function SelectionForm({
       message: errors.amount.message,
     });
   }
+
+  useDonationStepStatus(
+    1,
+    errorItems.length > 0 || (target === "shelter" && sheltersError)
+      ? "error"
+      : "current",
+  );
+
+  // Rendered both as the lazy chunk's Suspense fallback and before the shelter
+  // branch is ever activated, so the control keeps its box and its label instead
+  // of appearing only once the query chunk resolves.
+  const shelterFieldPlaceholder = (
+    <Controller
+      control={control}
+      name="shelterId"
+      render={({ field }) => (
+        <Dropdown
+          disabled
+          error={errors.shelterId?.message}
+          id="shelter-id"
+          label={t("selection.shelterLabel")}
+          onValueChange={() => undefined}
+          options={noShelterOptions}
+          placeholder={t("selection.sheltersLoading")}
+          ref={field.ref}
+          required
+          value={field.value || null}
+        />
+      )}
+    />
+  );
 
   return (
     <Form
@@ -246,7 +276,10 @@ export function SelectionForm({
                   checked={field.value === "shelter"}
                   name={field.name}
                   onBlur={field.onBlur}
-                  onChange={() => field.onChange("shelter")}
+                  onChange={() => {
+                    setSheltersActivated(true);
+                    field.onChange("shelter");
+                  }}
                   ref={field.ref}
                   type="radio"
                   value="shelter"
@@ -280,66 +313,20 @@ export function SelectionForm({
         data-testid="shelter-region"
       >
         <ShelterSection>
-          {sheltersQuery.isError ? (
-            <InlineAlert
-              action={
-                <Button
-                  loading={sheltersQuery.isFetching}
-                  onClick={() => void sheltersQuery.refetch()}
-                  variant="link"
-                >
-                  {t("common.retry")}
-                </Button>
-              }
-              title={t("selection.sheltersLoadTitle")}
-              tone="error"
-            >
-              {t("selection.sheltersLoadMessage")}
-            </InlineAlert>
-          ) : null}
-          {hasNoShelters ? (
-            <InlineAlert title={t("selection.sheltersEmptyTitle")} tone="info">
-              {t("selection.sheltersEmptyMessage")}
-            </InlineAlert>
-          ) : null}
-          <Controller
-            control={control}
-            name="shelterId"
-            render={({ field }) => (
-              <SelectField
-                data={shelters.map((shelter) => ({
-                  value: shelter.id.toString(),
-                  label: shelter.name,
-                }))}
-                disabled={
-                  target !== "shelter" ||
-                  sheltersQuery.isPending ||
-                  sheltersQuery.isError ||
-                  hasNoShelters
-                }
-                error={errors.shelterId?.message}
-                id="shelter-id"
-                label={t("selection.shelterLabel")}
-                onBlur={field.onBlur}
-                onChange={(value) =>
-                  setValue("shelterId", value, {
-                    shouldDirty: true,
-                    shouldValidate: Boolean(errors.shelterId),
-                  })
-                }
-                placeholder={
-                  sheltersQuery.isPending
-                    ? t("selection.sheltersLoading")
-                    : hasNoShelters
-                      ? t("selection.sheltersEmptyPlaceholder")
-                      : t("selection.shelterPlaceholder")
-                }
-                ref={field.ref}
-                required
-                value={field.value || null}
+          {sheltersActivated ? (
+            <Suspense fallback={shelterFieldPlaceholder}>
+              <ShelterQueryField
+                control={control}
+                enabled={target === "shelter"}
+                isSubmitted={isSubmitted}
+                onQueryChange={handleShelterQueryChange}
+                setValue={setValue}
+                {...(errors.shelterId ? { error: errors.shelterId } : {})}
               />
-            )}
-          />
+            </Suspense>
+          ) : (
+            shelterFieldPlaceholder
+          )}
         </ShelterSection>
       </ShelterRegion>
 
@@ -411,7 +398,7 @@ export function SelectionForm({
         >
           {t("common.back")}
         </Button>
-        <Button icon={<ArrowRightIcon />} type="submit">
+        <Button {...nextStepPrefetch} icon={<ArrowRightIcon />} type="submit">
           {t("common.continue")}
         </Button>
       </Actions>

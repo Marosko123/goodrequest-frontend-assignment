@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   detectPhoneCountry,
   formatPhoneInput,
+  getCountryFromPhoneDialCode,
+  getPhoneCaretIndex,
+  getPhoneDialCode,
   normalizePhone,
   parsePhone,
 } from "./phone";
@@ -78,4 +81,28 @@ describe("detectPhoneCountry", () => {
     expect(detectPhoneCountry("+421 (901) 234-567")).toBe("SK");
     expect(detectPhoneCountry("0901 234 567")).toBeNull();
   });
+});
+
+describe("segmented phone editing", () => {
+  it("maps only the supported editable dial codes", () => {
+    expect(getPhoneDialCode("SK")).toBe("421");
+    expect(getPhoneDialCode("CZ")).toBe("420");
+    expect(getCountryFromPhoneDialCode("421")).toBe("SK");
+    expect(getCountryFromPhoneDialCode("420")).toBe("CZ");
+    expect(getCountryFromPhoneDialCode("42")).toBeNull();
+    expect(getCountryFromPhoneDialCode("422")).toBeNull();
+  });
+
+  it.each([
+    ["", 0, 0],
+    ["901 234 567", 0, 0],
+    ["901 234 567", 3, 3],
+    ["901 234 567", 4, 5],
+    ["901 234 567", 9, 11],
+  ] as const)(
+    "maps %s digit offset %i to caret %i",
+    (value, digitOffset, expected) => {
+      expect(getPhoneCaretIndex(value, digitOffset)).toBe(expected);
+    },
+  );
 });

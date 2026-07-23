@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { InlineAlert } from "@/components/ui/inline-alert";
 import { formatCurrency, formatNumber } from "@/i18n/format";
+import { getAppLocale } from "@/i18n/config";
 import { resultsQueryOptions } from "@/lib/api/queries";
 
 import {
@@ -17,7 +18,7 @@ import {
 
 export function ResultsStats() {
   const { i18n, t } = useTranslation();
-  const locale = i18n.resolvedLanguage === "en" ? "en" : "sk";
+  const locale = getAppLocale(i18n.resolvedLanguage);
   const results = useQuery(resultsQueryOptions());
 
   if (results.isPending) {

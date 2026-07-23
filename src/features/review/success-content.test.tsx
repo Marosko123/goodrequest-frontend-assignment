@@ -15,7 +15,7 @@ function SuccessHarness() {
   const initialized = useRef(false);
 
   useEffect(() => {
-    if (initialized.current) {
+    if (initialized.current || !state.hydrated) {
       return;
     }
     initialized.current = true;
@@ -24,7 +24,7 @@ function SuccessHarness() {
       payload: { target: "foundation", amountCents: 2000 },
     });
     dispatch({ type: "submissionAccepted" });
-  }, [dispatch]);
+  }, [dispatch, state.hydrated]);
 
   return (
     <>
@@ -45,7 +45,7 @@ describe("SuccessContent", () => {
 
     expect(
       await screen.findByRole("heading", {
-        name: "Ďakujeme za váš príspevok",
+        name: "Ďakujeme za Váš príspevok",
       }),
     ).toBeInTheDocument();
     expect(screen.getByText("Príspevok bol úspešne prijatý.")).toBeVisible();
@@ -55,10 +55,30 @@ describe("SuccessContent", () => {
     expect(container.querySelectorAll('[data-icon="paw"]')).toHaveLength(2);
     expect(
       screen.getByRole("link", { name: "Prispieť znova" }),
+    ).toHaveAttribute("data-ui", "primary-action-link");
+    expect(
+      screen.getByRole("link", { name: "Prispieť znova" }),
     ).toHaveAttribute("href", "/");
     expect(screen.getByText("reset")).toBeVisible();
 
     await user.click(screen.getByRole("link", { name: "Prispieť znova" }));
     await waitFor(() => expect(screen.getByText("reset")).toBeVisible());
+  });
+
+  it("keeps the success copy first in the reading order", async () => {
+    render(
+      <DonationFlowProvider>
+        <SuccessHarness />
+      </DonationFlowProvider>,
+    );
+
+    const heading = await screen.findByRole("heading", {
+      name: "Ďakujeme za Váš príspevok",
+    });
+    const content = heading.closest("section");
+
+    expect(
+      Array.from(content?.children ?? []).map((element) => element.tagName),
+    ).toEqual(["H1", "P", "DIV", "A"]);
   });
 });

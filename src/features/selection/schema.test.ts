@@ -39,6 +39,19 @@ describe("createSelectionSchema", () => {
     });
   });
 
+  it("reports a missing shelter and a missing amount in one pass", () => {
+    const result = createSelectionSchema(shelters, t).safeParse({
+      target: "shelter",
+      shelterId: "",
+      amount: "",
+    });
+
+    expect(result.success).toBe(false);
+    expect(
+      result.success ? [] : result.error.issues.map((issue) => issue.path[0]),
+    ).toEqual(expect.arrayContaining(["amount", "shelterId"]));
+  });
+
   it("rejects an invalid custom amount", () => {
     const result = createSelectionSchema(shelters, t).safeParse({
       target: "foundation",
@@ -53,7 +66,8 @@ describe("createSelectionSchema", () => {
     ["", "Enter a contribution amount."],
     ["0", "The contribution amount must be greater than zero."],
     ["10.555", "Use no more than two decimal places."],
-    ["1000000.01", "The maximum contribution is €1,000,000."],
+    ["999999.01", "The maximum contribution is 999,999 €."],
+    ["1000000", "The maximum contribution is 999,999 €."],
     ["-151", "Use digits and at most one decimal separator."],
   ])(
     "explains the %s amount error in the requested locale",

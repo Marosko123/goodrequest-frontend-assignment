@@ -1,11 +1,24 @@
-import { ApiError } from "@/lib/api/client";
+import { ApiError } from "@/lib/api/errors";
 import { ContributionRejectedError } from "@/lib/api/outcome";
 
-export type SubmissionError = {
-  kind: "offline" | "unknown" | "rate-limit" | "invalid" | "service";
-};
+export type SubmissionState =
+  | "idle"
+  | "submitting"
+  | "offline"
+  | "connection-restored"
+  | "unknown-outcome"
+  | "rate-limited"
+  | "invalid"
+  | "service-unavailable";
 
-export function getSubmissionError(error: unknown): SubmissionError {
+type SubmissionFailureState = Exclude<
+  SubmissionState,
+  "idle" | "submitting" | "offline" | "connection-restored"
+>;
+
+export function getSubmissionStateFromError(
+  error: unknown,
+): SubmissionFailureState {
   if (
     error instanceof ApiError &&
     (error.kind === "network" ||
@@ -15,32 +28,22 @@ export function getSubmissionError(error: unknown): SubmissionError {
         error.status !== undefined &&
         error.status >= 500))
   ) {
-    return {
-      kind: "unknown",
-    };
+    return "unknown-outcome";
   }
 
   if (error instanceof ApiError && error.kind === "http") {
     if (error.status === 429) {
-      return {
-        kind: "rate-limit",
-      };
+      return "rate-limited";
     }
 
     if (error.status === 400 || error.status === 409 || error.status === 422) {
-      return {
-        kind: "invalid",
-      };
+      return "invalid";
     }
   }
 
   if (error instanceof ContributionRejectedError) {
-    return {
-      kind: error.kind === "unconfirmed" ? "unknown" : "invalid",
-    };
+    return error.kind === "unconfirmed" ? "unknown-outcome" : "invalid";
   }
 
-  return {
-    kind: "service",
-  };
+  return "service-unavailable";
 }

@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next";
+
 import { MAX_DONATION_CENTS } from "@/domain/donation";
 
 export { MAX_DONATION_CENTS };
@@ -12,7 +14,25 @@ export type AmountEditResult =
   | { accepted: true; value: string }
   | { accepted: false; code: AmountErrorCode };
 
-export type AmountLocale = "sk" | "en";
+export type AmountLocale = "sk" | "en" | "cz";
+
+export function getAmountErrorMessage(
+  code: AmountErrorCode,
+  t: TFunction,
+): string {
+  switch (code) {
+    case "empty":
+      return t("selection.amountErrorEmpty");
+    case "nonPositive":
+      return t("selection.amountErrorNonPositive");
+    case "precision":
+      return t("selection.amountErrorPrecision");
+    case "tooLarge":
+      return t("selection.amountErrorTooLarge");
+    case "format":
+      return t("selection.amountErrorFormat");
+  }
+}
 
 type AmountParts = {
   whole: string;
@@ -149,7 +169,7 @@ export function normalizeAmountEdit(
     return { accepted: false, code: "tooLarge" };
   }
 
-  const separator = locale === "sk" ? "," : ".";
+  const separator = locale === "en" ? "." : ",";
   const value = split.parts.hasSeparator
     ? `${split.parts.whole}${separator}${split.parts.fraction}`
     : split.parts.whole;
@@ -167,7 +187,7 @@ export function normalizeAmountOnBlur(
     return normalized.accepted ? normalized.value : rawValue;
   }
 
-  const separator = locale === "sk" ? "," : ".";
+  const separator = locale === "en" ? "." : ",";
   const [rawWhole = "", fraction] = normalized.value.split(separator);
   const whole = rawWhole.replace(/^0+(?=\d)/, "") || "0";
 

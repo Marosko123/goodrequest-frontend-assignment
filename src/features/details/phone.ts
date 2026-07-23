@@ -1,9 +1,28 @@
+import type { TFunction } from "i18next";
 import { AsYouType, parsePhoneNumberFromString } from "libphonenumber-js/max";
 
 import type { PhoneCountry } from "@/domain/donation";
 
 export type PhoneErrorCode =
   "empty" | "characters" | "unsupportedCountry" | "tooLong" | "invalid";
+
+export function getPhoneErrorMessage(
+  code: PhoneErrorCode,
+  t: TFunction,
+): string {
+  switch (code) {
+    case "empty":
+      return t("details.phoneRequiredError");
+    case "characters":
+      return t("details.phoneCharactersError");
+    case "unsupportedCountry":
+      return t("details.phoneCountryError");
+    case "tooLong":
+      return t("details.phoneTooLongError");
+    case "invalid":
+      return t("details.phoneError");
+  }
+}
 
 export type PhoneParseResult =
   | {
@@ -20,15 +39,56 @@ export type PhoneEditResult =
       code: Exclude<PhoneErrorCode, "empty" | "invalid">;
     };
 
+const phoneDialCodes = {
+  SK: "421",
+  CZ: "420",
+} as const satisfies Record<PhoneCountry, string>;
 const dialCodes: Record<PhoneCountry, string> = {
-  SK: "+421",
-  CZ: "+420",
+  SK: `+${phoneDialCodes.SK}`,
+  CZ: `+${phoneDialCodes.CZ}`,
 };
 const supportedPrefixes = ["+420", "+421", "00420", "00421"] as const;
 const allowedCharacters = /^[\d\s()+.-]*$/u;
 
 function compactPhone(rawValue: string): string {
   return rawValue.trim().replace(/[\s().-]/g, "");
+}
+
+export function getPhoneDialCode(country: PhoneCountry): string {
+  return phoneDialCodes[country];
+}
+
+export function getCountryFromPhoneDialCode(
+  dialCode: string,
+): PhoneCountry | null {
+  if (dialCode === phoneDialCodes.SK) {
+    return "SK";
+  }
+  if (dialCode === phoneDialCodes.CZ) {
+    return "CZ";
+  }
+  return null;
+}
+
+export function getPhoneCaretIndex(
+  formattedValue: string,
+  digitOffset: number,
+): number {
+  if (digitOffset <= 0) {
+    return 0;
+  }
+
+  let digitsSeen = 0;
+  for (const [index, character] of [...formattedValue].entries()) {
+    if (/\d/u.test(character)) {
+      digitsSeen += 1;
+    }
+    if (digitsSeen === digitOffset) {
+      return index + 1;
+    }
+  }
+
+  return formattedValue.length;
 }
 
 function isPartialSupportedPrefix(value: string): boolean {
