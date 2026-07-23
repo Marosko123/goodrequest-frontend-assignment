@@ -17,10 +17,6 @@ import { useLazyZodResolver } from "@/lib/validation/use-lazy-zod-resolver";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon, ArrowRightIcon } from "@/components/ui/icons";
 import { useDonationStepStatus } from "@/components/layout/donation-progress-context";
-import {
-  FormErrorSummary,
-  type FormErrorItem,
-} from "@/components/ui/form-error-summary";
 import { Dropdown, type DropdownOption } from "@/components/ui/dropdown";
 import { TextField } from "@/components/ui/text-field";
 import type { DonationSelection, Shelter } from "@/domain/donation";
@@ -129,7 +125,6 @@ export function SelectionForm({
   const amountStyle = {
     "--amount-characters": Math.max(1, Math.min(amount.length, 10)),
   } as CSSProperties;
-  const errorItems: FormErrorItem[] = [];
   const handleShelterQueryChange = useCallback(
     (nextShelters: readonly Shelter[], isError: boolean) => {
       setShelters(nextShelters);
@@ -213,24 +208,9 @@ export function SelectionForm({
     }
   }, [amount, errors.amount, locale, setValue]);
 
-  if (errors.shelterId?.message) {
-    errorItems.push({
-      fieldId: "shelter-id",
-      label: t("selection.shelterLabel"),
-      message: errors.shelterId.message,
-    });
-  }
-  if (errors.amount?.message) {
-    errorItems.push({
-      fieldId: "amount",
-      label: t("selection.customAmount"),
-      message: errors.amount.message,
-    });
-  }
-
   useDonationStepStatus(
     1,
-    errorItems.length > 0 || (target === "shelter" && sheltersError)
+    errors.shelterId || errors.amount || (target === "shelter" && sheltersError)
       ? "error"
       : "current",
   );
@@ -386,8 +366,6 @@ export function SelectionForm({
           ))}
         </Presets>
       </AmountFieldset>
-
-      {isSubmitted ? <FormErrorSummary errors={errorItems} /> : null}
 
       <Actions>
         <Button

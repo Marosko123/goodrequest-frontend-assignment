@@ -5,7 +5,6 @@ export const sk = {
     retry: "Skúsiť znova",
     contact: "Kontakt",
     about: "O projekte",
-    formErrors: "Formulár obsahuje chyby",
     skipToContent: "Preskočiť na hlavný obsah",
   },
   language: {
