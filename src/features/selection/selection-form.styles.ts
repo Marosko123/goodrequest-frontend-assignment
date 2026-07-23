@@ -279,7 +279,7 @@ export const Actions = styled.div`
   }
 
   @media (width <= 22rem) {
-    flex-direction: column-reverse;
+    flex-direction: column;
 
     > * {
       width: 100%;

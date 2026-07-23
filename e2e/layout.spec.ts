@@ -172,11 +172,20 @@ test("contact and about use the exact public-page geometry", async ({
 test("all assignment screens reflow at the target widths", async ({ page }) => {
   test.setTimeout(60_000);
 
-  for (const width of [280, 320, 390, 720, 768, 1024, 1440]) {
+  for (const width of [280, 320, 375, 390, 720, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 1024 });
 
     await page.goto("/");
     await expectNoHorizontalOverflow(page, `selection at ${width}px`);
+    if (width === 320) {
+      const back = await page
+        .getByRole("button", { name: "Späť" })
+        .boundingBox();
+      const next = await page
+        .getByRole("button", { name: "Pokračovať" })
+        .boundingBox();
+      expect(back?.y).toBeLessThan(next?.y ?? 0);
+    }
 
     await reachDetails(page);
     await expectNoHorizontalOverflow(page, `details at ${width}px`);
