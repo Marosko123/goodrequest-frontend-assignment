@@ -4,7 +4,9 @@ node_modules
 out
 coverage
 playwright-report
-test-results
+test-results*
 pnpm-lock.yaml
-README.md
-placeholder/
+
+# Verbatim bilingual assignment brief from GoodRequest. ZADANIE.md declares its
+# wording authoritative, so it stays byte-identical to the supplied source.
+docs/assignment-brief.md

@@ -9,6 +9,8 @@ import { initReactI18next } from "react-i18next";
 import { getI18nOptions } from "@/i18n/instance";
 import { server } from "@/test/server";
 
+// Default instance for component tests rendered without AppI18nProvider.
+// Tests that mount the provider resolve their instance from context instead.
 i18next.use(initReactI18next);
 void i18next.init(getI18nOptions("sk"));
 
