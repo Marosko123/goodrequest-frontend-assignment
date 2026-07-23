@@ -278,9 +278,24 @@ test("core public routes reflow without horizontal overflow", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 800 });
+  await page.route("**/shelters/results", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        contributors: 1_028,
+        contribution: 12_312_778_679.05,
+      }),
+    }),
+  );
 
   for (const path of ["/", "/contact/", "/about/"]) {
     await page.goto(path);
+
+    if (path === "/about/") {
+      // Nothing can overflow while the fixed-size skeleton is still up.
+      await expect(page.locator("dl dd").first()).toBeVisible();
+    }
+
     const overflows = await page.evaluate(
       () =>
         document.documentElement.scrollWidth >

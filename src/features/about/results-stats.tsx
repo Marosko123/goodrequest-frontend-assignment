@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,13 @@ import {
   Skeleton,
   StatsGrid,
 } from "./results-stats.styles";
+
+// Lets the stylesheet shrink oversized figures to the width of their column.
+// Both stats size off the longest one so the pair keeps a single type size.
+const statsStyle = (...values: string[]) =>
+  ({
+    "--stat-characters": Math.max(...values.map(({ length }) => length)),
+  }) as CSSProperties;
 
 export function ResultsStats() {
   const { i18n, t } = useTranslation();
@@ -46,17 +54,21 @@ export function ResultsStats() {
     );
   }
 
+  const contribution = formatCurrency(
+    results.data.contributionCents / 100,
+    locale,
+  );
+  const contributors = formatNumber(results.data.contributors, locale);
+
   return (
     <Content>
-      <StatsGrid>
+      <StatsGrid style={statsStyle(contribution, contributors)}>
         <div>
-          <dd>
-            {formatCurrency(results.data.contributionCents / 100, locale)}
-          </dd>
+          <dd>{contribution}</dd>
           <dt>{t("stats.contribution")}</dt>
         </div>
         <div>
-          <dd>{formatNumber(results.data.contributors, locale)}</dd>
+          <dd>{contributors}</dd>
           <dt>{t("stats.contributors")}</dt>
         </div>
       </StatsGrid>
