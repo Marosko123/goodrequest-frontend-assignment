@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 4173",
-    "build": "next build",
+    "build": "next build && node scripts/finalize-static-export.mjs",
     "typecheck": "next typegen && tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "lint:styles": "stylelint 'src/**/*.{ts,tsx}'",

@@ -30,7 +30,7 @@ Each locale owns a module-cached i18next instance and `AppI18nProvider` hands th
 
 All three locales are bundled rather than fetched on demand. The static export prerenders Client Components at build time, so an unresolved namespace during hydration would either suspend or mismatch the prerendered markup. Bundled resources plus `initAsync: false` keep `useTranslation` ready on the first render. The measured cost is 15.5 kB gzip per route, and the frozen route baseline was raised by exactly that amount.
 
-Static HTML still carries `lang="sk"` on every route because the root layout is shared and no `[lng]` segment exists; an inline script corrects the attribute before paint. Moving Slovak from `/` to `/sk/` would change the canonical, sitemap and hreflang contract, so the script stays.
+The shared root layout renders Slovak as its fallback language. The build finalizer rewrites every known English and Czech HTML document to `lang="en"` and `lang="cs"` and fails on a changed export manifest. The inline script remains for client navigation and localized 404 routes before the React effect takes ownership.
 
 ## Privacy consent boundary
 
@@ -128,5 +128,5 @@ gzip on that route. Its output is pinned against `formatInternational()` in
 - Native controls are preferred. A measured audit removed the single Mantine select because its client and CSS cost was disproportionate to a short shelter list.
 - Styling uses `styled-components@6.4.4` with the Next.js SWC transform and native React Server Component support. Static typed tokens emit the existing CSS custom-property contract without a runtime `ThemeProvider`; finite variants use `data-*` selectors and user-derived values stay in CSS custom properties.
 - Server Components emit their styles through the native v6.4 RSC path. The interactive form tree uses the minimal Next.js SSR sheet collector so its Client Component rules are present in the static HTML before hydration and when JavaScript is unavailable.
-- Styled declarations and keyframes live at module scope in co-located `*.styles.ts` files. The static export is protected by a per-route gzip gate that allows at most 25,600 bytes of JavaScript growth from the pre-migration baseline.
-- Multiple donors, Storybook, analytics, persistence and decorative animation libraries remain outside the core scope. Slovak and English localization are part of the implemented flow.
+- Styled declarations and keyframes live at module scope in co-located `*.styles.ts` files. The static export is protected by frozen per-route gzip baselines with zero growth allowance plus absolute caps for critical routes.
+- Multiple donors, Storybook, analytics and decorative animation libraries remain outside the core scope. Slovak, English and Czech localization and the `sessionStorage` flow snapshot are part of the implemented flow.
