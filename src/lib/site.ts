@@ -1,10 +1,38 @@
 import type { Metadata } from "next";
 
-import type { AppLocale } from "@/i18n/config";
+import { supportedLocales, type AppLocale } from "@/i18n/config";
 import { createTranslator } from "@/i18n/instance";
 
 export const sitePath = "/goodrequest-frontend-assignment/";
 export const siteUrl = `https://marosko123.github.io${sitePath}`;
+
+const routePrefixByLocale: Record<AppLocale, string> = {
+  sk: "",
+  en: "en/",
+  cz: "cz/",
+};
+
+const hrefLangByLocale: Record<AppLocale, string> = {
+  sk: "sk-SK",
+  en: "en",
+  cz: "cs-CZ",
+};
+
+const openGraphLocaleByAppLocale: Record<AppLocale, string> = {
+  sk: "sk_SK",
+  en: "en_GB",
+  cz: "cs_CZ",
+};
+
+const socialImagePathByLocale: Record<AppLocale, string> = {
+  sk: "social/goodboy-og-sk.png",
+  en: "social/goodboy-og-en.png",
+  cz: "social/goodboy-og-cz.png",
+};
+
+export function getSocialImageUrl(locale: AppLocale): string {
+  return new URL(socialImagePathByLocale[locale], siteUrl).toString();
+}
 
 export function createPageMetadata({
   description,
@@ -21,12 +49,27 @@ export function createPageMetadata({
 }): Metadata {
   const brandedTitle = `${title} | GoodBoy`;
   const t = createTranslator(locale);
-  const slovakPath =
-    path === "" || path === "./" ? "./" : path.replace(/^en\//u, "");
-  const englishPath = slovakPath === "./" ? "en/" : `en/${slovakPath}`;
-  const slovakUrl = new URL(slovakPath, siteUrl).toString();
-  const englishUrl = new URL(englishPath, siteUrl).toString();
-  const localizedUrl = locale === "en" ? englishUrl : slovakUrl;
+  const unlocalizedPath =
+    path === "" || path === "./" ? "" : path.replace(/^(?:en|cz)\//u, "");
+  const urlByLocale = Object.fromEntries(
+    supportedLocales.map((candidate) => [
+      candidate,
+      new URL(
+        `${routePrefixByLocale[candidate]}${unlocalizedPath}`,
+        siteUrl,
+      ).toString(),
+    ]),
+  ) as Record<AppLocale, string>;
+  const slovakUrl = urlByLocale.sk;
+  const localizedUrl = urlByLocale[locale];
+  const languageAlternates = Object.fromEntries(
+    supportedLocales.map((candidate) => [
+      hrefLangByLocale[candidate],
+      urlByLocale[candidate],
+    ]),
+  );
+  const openGraphLocale = openGraphLocaleByAppLocale[locale];
+  const socialImageUrl = getSocialImageUrl(locale);
 
   return {
     title: { absolute: brandedTitle },
@@ -34,8 +77,7 @@ export function createPageMetadata({
     alternates: {
       canonical: localizedUrl,
       languages: {
-        "sk-SK": slovakUrl,
-        en: englishUrl,
+        ...languageAlternates,
         "x-default": slovakUrl,
       },
     },
@@ -43,15 +85,18 @@ export function createPageMetadata({
       title: brandedTitle,
       description,
       type: "website",
-      locale: locale === "sk" ? "sk_SK" : "en_GB",
-      alternateLocale: locale === "sk" ? ["en_GB"] : ["sk_SK"],
+      locale: openGraphLocale,
+      alternateLocale: supportedLocales
+        .filter((candidate) => candidate !== locale)
+        .map((candidate) => openGraphLocaleByAppLocale[candidate]),
       siteName: "GoodBoy",
       url: localizedUrl,
       images: [
         {
-          url: "og-image.png",
+          url: socialImageUrl,
           width: 1200,
           height: 630,
+          type: "image/png",
           alt: t("seo.imageAlt"),
         },
       ],
@@ -60,7 +105,7 @@ export function createPageMetadata({
       card: "summary_large_image",
       title: brandedTitle,
       description,
-      images: ["og-image.png"],
+      images: [socialImageUrl],
     },
     ...(robots ? { robots } : {}),
   };

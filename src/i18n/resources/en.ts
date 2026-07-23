@@ -9,13 +9,17 @@ export const en = {
     contact: "Contact",
     about: "About the project",
     formErrors: "The form contains errors",
+    skipToContent: "Skip to main content",
   },
   language: {
     label: "Page language",
+    openMenu: "Choose language",
     sk: "SK",
     en: "EN",
+    cz: "CZ",
     switchToSk: "Switch to Slovak",
     switchToEn: "Switch to English",
+    switchToCz: "Switch to Czech",
   },
   navigation: {
     home: "Good Boy – home",
@@ -32,6 +36,13 @@ export const en = {
     selection: "Shelter selection",
     details: "Personal details",
     review: "Confirmation",
+    status: {
+      current: "Current step",
+      finished: "Completed",
+      inProgress: "Processing",
+      wait: "Waiting",
+      error: "Error",
+    },
   },
   selection: {
     title: "Choose how you would like to help",
@@ -51,7 +62,7 @@ export const en = {
       "The contribution amount must be greater than zero.",
     amountErrorFormat: "Use digits and at most one decimal separator.",
     amountErrorPrecision: "Use no more than two decimal places.",
-    amountErrorTooLarge: "The maximum contribution is €1,000,000.",
+    amountErrorTooLarge: "The maximum contribution is 999,999 €.",
     shelterError: "Choose a shelter from the list.",
     sheltersEmptyTitle: "No shelters available",
     sheltersEmptyMessage:
@@ -69,12 +80,13 @@ export const en = {
     emailPlaceholder: "Enter your email",
     phone: "Phone number",
     phoneCountry: "Phone number country",
+    phoneDialCode: "Phone number country code",
     slovakia: "Slovakia +421",
     czechia: "Czechia +420",
     firstNameError:
-      "First name must contain 2 to 20 characters or remain empty.",
-    lastNameMinError: "Last name must contain at least 2 characters.",
-    lastNameMaxError: "Last name may contain no more than 30 characters.",
+      "First name may remain empty or contain up to 20 letters, spaces, apostrophes or hyphens.",
+    lastNameError:
+      "Enter a valid last name using letters, spaces, apostrophes or hyphens.",
     emailError: "Enter a valid email address.",
     emailTooLongError:
       "An email address may contain no more than 254 characters.",
@@ -102,7 +114,16 @@ export const en = {
     consent: "I consent to the processing of my personal data",
     consentError: "Your consent is required to submit the contribution.",
     submit: "Submit form",
+    submitting: "Submitting…",
     resend: "Submit again",
+    status: {
+      submittingTitle: "Waiting for confirmation",
+      submittingMessage:
+        "We are submitting the contribution. Wait until we receive confirmation.",
+      restoredTitle: "Connection restored",
+      restoredMessage:
+        "We did not submit the contribution automatically. Try again when you are ready.",
+    },
     errors: {
       offlineTitle: "You are offline",
       offlineMessage:
@@ -124,6 +145,12 @@ export const en = {
     title: "Thank you for your contribution",
     message: "Your contribution was received successfully.",
     again: "Contribute again",
+  },
+  notFound: {
+    title: "We couldn't find this trail.",
+    description:
+      "This page seems to have wandered off. Head home and continue on familiar ground.",
+    home: "Back home",
   },
   about: {
     title: "About the project",
@@ -152,25 +179,27 @@ export const en = {
     officeValue: "Obchodná 3D, 010 08 Žilina, Slovakia",
     phoneTitle: "Phone",
     phoneDescription: "Monday to Friday from 8am to 5pm.",
+    copiedToClipboard: "Copied to clipboard",
   },
   seo: {
-    siteTitle: "GoodBoy – Helping shelters",
+    siteTitle: "GoodBoy – Help dogs and shelters",
     siteDescription:
-      "Support the GoodBoy Foundation or a specific Slovak shelter.",
-    imageAlt: "GoodBoy – helping dogs and shelters",
-    homeTitle: "Choose how to help",
+      "Support the GoodBoy Foundation or a specific Slovak shelter. Choose who to help and how much to contribute.",
+    imageAlt: "GoodBoy logo and a golden retriever on a beach.",
+    homeTitle: "Help dogs and shelters",
     homeDescription:
-      "Support the whole GoodBoy Foundation or a selected Slovak shelter.",
-    aboutTitle: "About the project",
-    aboutDescription: "The Good Boy Foundation's mission and current results.",
+      "Support the GoodBoy Foundation or a specific Slovak shelter. Choose who to help and how much to contribute.",
+    aboutTitle: "How GoodBoy helps",
+    aboutDescription:
+      "Learn about the GoodBoy Foundation's mission and its current impact for dogs.",
     contactTitle: "Contact",
-    contactDescription: "Contact details for the GoodRequest team in Žilina.",
-    detailsTitle: "Personal details",
+    contactDescription: "Contact the GoodRequest team in Žilina.",
+    detailsTitle: "Your details",
     detailsDescription:
       "Enter the details required to submit your contribution.",
-    reviewTitle: "Confirm contribution",
+    reviewTitle: "Review your contribution",
     reviewDescription: "Review your details and submit your contribution.",
-    successTitle: "Thank you",
-    successDescription: "Your contribution was received successfully.",
+    successTitle: "Thank you for helping",
+    successDescription: "We received your contribution successfully.",
   },
 } as const satisfies TranslationShape<typeof sk>;

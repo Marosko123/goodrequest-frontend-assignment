@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
-import "@fontsource-variable/inter";
-
 import { createTranslator } from "@/i18n/instance";
-import { siteUrl } from "@/lib/site";
+import { getSocialImageUrl, siteUrl } from "@/lib/site";
+import { interFontFaceCss } from "@/styles/inter-font";
 import { GlobalStyles } from "@/styles/global-styles";
 
 import { AppProviders } from "./providers";
@@ -23,6 +22,7 @@ const productionContentSecurityPolicy = [
 ].join("; ");
 
 const t = createTranslator("sk");
+const defaultSocialImageUrl = getSocialImageUrl("sk");
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -42,9 +42,10 @@ export const metadata: Metadata = {
     url: "./",
     images: [
       {
-        url: "og-image.png",
+        url: defaultSocialImageUrl,
         width: 1200,
         height: 630,
+        type: "image/png",
         alt: t("seo.imageAlt"),
       },
     ],
@@ -53,7 +54,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: t("seo.siteTitle"),
     description: t("seo.siteDescription"),
-    images: ["og-image.png"],
+    images: [defaultSocialImageUrl],
   },
 };
 
@@ -63,6 +64,10 @@ export default function RootLayout({
   return (
     <html data-scroll-behavior="smooth" lang="sk" suppressHydrationWarning>
       <head>
+        <style
+          dangerouslySetInnerHTML={{ __html: interFontFaceCss }}
+          id="inter-font-face"
+        />
         {process.env.NODE_ENV === "production" ? (
           <meta
             content={productionContentSecurityPolicy}
@@ -72,7 +77,7 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html:
-              'document.documentElement.lang=/(?:^|\\/)en(?:\\/|$)/.test(location.pathname)?"en":"sk";',
+              'document.documentElement.lang=/(?:^|\\/)cz(?:\\/|$)/.test(location.pathname)?"cs":/(?:^|\\/)en(?:\\/|$)/.test(location.pathname)?"en":"sk";',
           }}
           id="document-locale"
         />

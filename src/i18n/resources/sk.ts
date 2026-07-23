@@ -6,13 +6,17 @@ export const sk = {
     contact: "Kontakt",
     about: "O projekte",
     formErrors: "Formulár obsahuje chyby",
+    skipToContent: "Preskočiť na hlavný obsah",
   },
   language: {
     label: "Jazyk stránky",
+    openMenu: "Vybrať jazyk",
     sk: "SK",
     en: "EN",
+    cz: "CZ",
     switchToSk: "Prepnúť do slovenčiny",
     switchToEn: "Prepnúť do angličtiny",
+    switchToCz: "Prepnúť do češtiny",
   },
   navigation: {
     home: "Good Boy – domov",
@@ -29,6 +33,13 @@ export const sk = {
     selection: "Výber útulku",
     details: "Osobné údaje",
     review: "Potvrdenie",
+    status: {
+      current: "Aktuálny krok",
+      finished: "Dokončené",
+      inProgress: "Spracováva sa",
+      wait: "Čaká",
+      error: "Chyba",
+    },
   },
   selection: {
     title: "Vyberte si možnosť, ako chcete pomôcť",
@@ -49,7 +60,7 @@ export const sk = {
     amountErrorFormat:
       "Použite iba číslice a najviac jeden desatinný oddeľovač.",
     amountErrorPrecision: "Použite najviac dve desatinné miesta.",
-    amountErrorTooLarge: "Maximálna výška príspevku je 1 000 000 €.",
+    amountErrorTooLarge: "Maximálna výška príspevku je 999 999 €.",
     shelterError: "Vyberte útulok zo zoznamu.",
     sheltersEmptyTitle: "Žiadne dostupné útulky",
     sheltersEmptyMessage:
@@ -58,20 +69,22 @@ export const sk = {
   },
   details: {
     title: "Potrebujeme od Vás zopár informácií",
-    sectionTitle: "O vás",
+    sectionTitle: "O Vás",
     firstName: "Meno",
-    firstNamePlaceholder: "Zadajte vaše meno",
+    firstNamePlaceholder: "Zadajte Vaše meno",
     lastName: "Priezvisko",
-    lastNamePlaceholder: "Zadajte vaše priezvisko",
+    lastNamePlaceholder: "Zadajte Vaše priezvisko",
     email: "E-mailová adresa",
-    emailPlaceholder: "Zadajte váš e-mail",
+    emailPlaceholder: "Zadajte Váš e-mail",
     phone: "Telefónne číslo",
     phoneCountry: "Krajina telefónneho čísla",
+    phoneDialCode: "Predvoľba telefónneho čísla",
     slovakia: "Slovensko +421",
     czechia: "Česko +420",
-    firstNameError: "Meno musí mať 2 až 20 znakov alebo zostať prázdne.",
-    lastNameMinError: "Priezvisko musí mať aspoň 2 znaky.",
-    lastNameMaxError: "Priezvisko môže mať najviac 30 znakov.",
+    firstNameError:
+      "Meno môže zostať prázdne alebo obsahovať najviac 20 písmen, medzier, apostrofov či spojovníkov.",
+    lastNameError:
+      "Zadajte platné priezvisko s písmenami, medzerami, apostrofmi alebo spojovníkmi.",
     emailError: "Zadajte platnú e-mailovú adresu.",
     emailTooLongError: "E-mailová adresa môže mať najviac 254 znakov.",
     phoneRequiredError: "Zadajte telefónne číslo.",
@@ -96,9 +109,18 @@ export const sk = {
     email: "E-mail",
     phone: "Telefónne číslo",
     consent: "Súhlasím so spracovaním mojich osobných údajov",
-    consentError: "Na odoslanie príspevku je potrebný váš súhlas.",
+    consentError: "Na odoslanie príspevku je potrebný Váš súhlas.",
     submit: "Odoslať formulár",
+    submitting: "Odosielame…",
     resend: "Odoslať znova",
+    status: {
+      submittingTitle: "Čakáme na potvrdenie",
+      submittingMessage:
+        "Príspevok odosielame. Počkajte, kým dostaneme potvrdenie.",
+      restoredTitle: "Pripojenie je obnovené",
+      restoredMessage:
+        "Príspevok sme automaticky neodoslali. Keď budete pripravení, skúste to znova.",
+    },
     errors: {
       offlineTitle: "Ste offline",
       offlineMessage:
@@ -116,9 +138,15 @@ export const sk = {
     },
   },
   success: {
-    title: "Ďakujeme za váš príspevok",
+    title: "Ďakujeme za Váš príspevok",
     message: "Príspevok bol úspešne prijatý.",
     again: "Prispieť znova",
+  },
+  notFound: {
+    title: "Túto stopu sme nenašli.",
+    description:
+      "Stránka sa asi zatúlala. Vráťte sa na úvod a pokračujte po známej trase.",
+    home: "Späť domov",
   },
   about: {
     title: "O projekte",
@@ -141,30 +169,32 @@ export const sk = {
   contact: {
     title: "Kontakt",
     emailTitle: "E-mail",
-    emailDescription: "Náš tím vám rád pomôže.",
+    emailDescription: "Náš tím Vám rád pomôže.",
     officeTitle: "Kancelária",
-    officeDescription: "Radi vás privítame v našej kancelárii.",
+    officeDescription: "Radi Vás privítame v našej kancelárii.",
     officeValue: "Obchodná 3D, 010 08 Žilina, Slovensko",
     phoneTitle: "Telefón",
     phoneDescription: "Pondelok až piatok od 8:00 do 17:00.",
+    copiedToClipboard: "Skopírované do schránky",
   },
   seo: {
-    siteTitle: "GoodBoy – Pomoc útulkom",
+    siteTitle: "GoodBoy – Pomôžte psom a útulkom",
     siteDescription:
-      "Podporte nadáciu GoodBoy alebo konkrétny slovenský útulok.",
-    imageAlt: "GoodBoy – pomoc psom a útulkom",
-    homeTitle: "Vyberte formu pomoci",
+      "Prispejte nadácii GoodBoy alebo konkrétnemu slovenskému útulku. Jednoducho si vyberte, komu a akou sumou pomôžete.",
+    imageAlt: "Logo GoodBoy a zlatý retriever na pláži.",
+    homeTitle: "Pomôžte psom a útulkom",
     homeDescription:
-      "Podporte celú nadáciu GoodBoy alebo vybraný slovenský útulok.",
-    aboutTitle: "O projekte",
-    aboutDescription: "Poslanie nadácie Good Boy a jej aktuálne výsledky.",
+      "Prispejte nadácii GoodBoy alebo konkrétnemu slovenskému útulku. Jednoducho si vyberte, komu a akou sumou pomôžete.",
+    aboutTitle: "Ako GoodBoy pomáha",
+    aboutDescription:
+      "Spoznajte poslanie nadácie GoodBoy a jej aktuálne výsledky pomoci psom.",
     contactTitle: "Kontakt",
-    contactDescription: "Kontaktné údaje tímu GoodRequest v Žiline.",
-    detailsTitle: "Osobné údaje",
+    contactDescription: "Kontaktujte tím GoodRequest v Žiline.",
+    detailsTitle: "Vaše údaje",
     detailsDescription: "Doplňte údaje potrebné na odoslanie príspevku.",
-    reviewTitle: "Potvrdenie príspevku",
+    reviewTitle: "Skontrolujte príspevok",
     reviewDescription: "Skontrolujte údaje a odošlite svoj príspevok.",
-    successTitle: "Ďakujeme",
-    successDescription: "Príspevok bol úspešne prijatý.",
+    successTitle: "Ďakujeme za pomoc",
+    successDescription: "Váš príspevok sme úspešne prijali.",
   },
 } as const;

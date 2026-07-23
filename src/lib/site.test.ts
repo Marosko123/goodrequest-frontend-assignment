@@ -33,10 +33,11 @@ describe("createPageMetadata", () => {
         url: "https://marosko123.github.io/goodrequest-frontend-assignment/details/",
         images: [
           {
-            url: "og-image.png",
+            url: "https://marosko123.github.io/goodrequest-frontend-assignment/social/goodboy-og-sk.png",
             width: 1200,
             height: 630,
-            alt: "GoodBoy – pomoc psom a útulkom",
+            type: "image/png",
+            alt: "Logo GoodBoy a zlatý retriever na pláži.",
           },
         ],
       },
@@ -44,7 +45,9 @@ describe("createPageMetadata", () => {
         card: "summary_large_image",
         title: "Osobné údaje | GoodBoy",
         description: "Doplňte údaje potrebné na odoslanie príspevku.",
-        images: ["og-image.png"],
+        images: [
+          "https://marosko123.github.io/goodrequest-frontend-assignment/social/goodboy-og-sk.png",
+        ],
       },
     });
   });
@@ -73,7 +76,67 @@ describe("createPageMetadata", () => {
       openGraph: {
         locale: "en_GB",
         url: "https://marosko123.github.io/goodrequest-frontend-assignment/en/details/",
-        images: [{ alt: "GoodBoy – helping dogs and shelters" }],
+        images: [
+          {
+            url: "https://marosko123.github.io/goodrequest-frontend-assignment/social/goodboy-og-en.png",
+            width: 1200,
+            height: 630,
+            type: "image/png",
+            alt: "GoodBoy logo and a golden retriever on a beach.",
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        images: [
+          "https://marosko123.github.io/goodrequest-frontend-assignment/social/goodboy-og-en.png",
+        ],
+      },
+    });
+  });
+
+  it("builds Czech canonical, hreflang and social metadata", () => {
+    const metadata = createPageMetadata({
+      locale: "cz",
+      title: "Osobní údaje",
+      description: "Doplňte údaje potřebné k odeslání příspěvku.",
+      path: "details/",
+    });
+
+    expect(metadata).toMatchObject({
+      title: { absolute: "Osobní údaje | GoodBoy" },
+      alternates: {
+        canonical:
+          "https://marosko123.github.io/goodrequest-frontend-assignment/cz/details/",
+        languages: {
+          "sk-SK":
+            "https://marosko123.github.io/goodrequest-frontend-assignment/details/",
+          en: "https://marosko123.github.io/goodrequest-frontend-assignment/en/details/",
+          "cs-CZ":
+            "https://marosko123.github.io/goodrequest-frontend-assignment/cz/details/",
+          "x-default":
+            "https://marosko123.github.io/goodrequest-frontend-assignment/details/",
+        },
+      },
+      openGraph: {
+        locale: "cs_CZ",
+        alternateLocale: ["sk_SK", "en_GB"],
+        url: "https://marosko123.github.io/goodrequest-frontend-assignment/cz/details/",
+        images: [
+          {
+            url: "https://marosko123.github.io/goodrequest-frontend-assignment/social/goodboy-og-cz.png",
+            width: 1200,
+            height: 630,
+            type: "image/png",
+            alt: "Logo GoodBoy a zlatý retrívr na pláži.",
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        images: [
+          "https://marosko123.github.io/goodrequest-frontend-assignment/social/goodboy-og-cz.png",
+        ],
       },
     });
   });

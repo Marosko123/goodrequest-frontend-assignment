@@ -1,4 +1,4 @@
-export const supportedLocales = ["sk", "en"] as const;
+export const supportedLocales = ["sk", "en", "cz"] as const;
 
 export type AppLocale = (typeof supportedLocales)[number];
 
@@ -12,6 +12,19 @@ export const appBasePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(
 export const intlLocaleByAppLocale: Record<AppLocale, string> = {
   sk: "sk-SK",
   en: "en-SK",
+  cz: "cs-CZ",
+};
+
+export const htmlLangByAppLocale: Record<AppLocale, string> = {
+  sk: "sk",
+  en: "en",
+  cz: "cs",
+};
+
+const pathPrefixByAppLocale: Record<AppLocale, string> = {
+  sk: "",
+  en: "en",
+  cz: "cz",
 };
 
 function withoutBasePath(pathname: string, basePath: string): string {
@@ -33,7 +46,21 @@ export function getLocaleFromPathname(
   basePath = appBasePath,
 ): AppLocale {
   const path = withoutBasePath(pathname?.split(/[?#]/, 1)[0] ?? "/", basePath);
-  return path === "/en" || path.startsWith("/en/") ? "en" : "sk";
+  return (
+    supportedLocales.find((locale) => {
+      const prefix = pathPrefixByAppLocale[locale];
+      return (
+        prefix && (path === `/${prefix}` || path.startsWith(`/${prefix}/`))
+      );
+    }) ?? defaultLocale
+  );
+}
+
+export function getAppLocale(
+  language: string | undefined,
+  fallback: AppLocale = defaultLocale,
+): AppLocale {
+  return supportedLocales.find((locale) => locale === language) ?? fallback;
 }
 
 export function getUnlocalizedPath(
@@ -46,7 +73,7 @@ export function getUnlocalizedPath(
     basePath,
   );
   const suffix = suffixIndex === -1 ? "" : pathname.slice(suffixIndex);
-  const withoutLocale = path.replace(/^\/en(?=\/|$)/u, "") || "/";
+  const withoutLocale = path.replace(/^\/(?:en|cz)(?=\/|$)/u, "") || "/";
   const hadTrailingSlash = path.endsWith("/");
   const normalized =
     withoutLocale === "/"
@@ -62,12 +89,14 @@ export function getLocalizedPath(
 ): string {
   const path = getUnlocalizedPath(pathname, basePath);
   const suffixIndex = path.search(/[?#]/u);
-  const barePath = suffixIndex === -1 ? path : path.slice(0, suffixIndex);
+  const rawBarePath = suffixIndex === -1 ? path : path.slice(0, suffixIndex);
   const suffix = suffixIndex === -1 ? "" : path.slice(suffixIndex);
 
-  if (locale === "sk") {
-    return `${barePath}${suffix}`;
-  }
+  // The export is built with trailingSlash: true, so every route URL has to end
+  // with a slash. On a known route the router would normalize it, but a
+  // statically served 404 has no route to match and would keep a bare path.
+  const barePath = rawBarePath.endsWith("/") ? rawBarePath : `${rawBarePath}/`;
 
-  return barePath === "/" ? `/en/${suffix}` : `/en${barePath}${suffix}`;
+  const prefix = pathPrefixByAppLocale[locale];
+  return prefix ? `/${prefix}${barePath}${suffix}` : `${barePath}${suffix}`;
 }
