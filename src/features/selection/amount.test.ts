@@ -16,7 +16,8 @@ describe("parseAmountToCents", () => {
     ["1 234,56 €", 123456],
     ["0005,2", 520],
     ["0,01", 1],
-    ["1000000", MAX_DONATION_CENTS],
+    ["999999", MAX_DONATION_CENTS],
+    ["999 999 €", MAX_DONATION_CENTS],
   ])("parses %s into whole cents", (value, expected) => {
     expect(parseAmountToCents(value)).toBe(expected);
   });
@@ -31,7 +32,11 @@ describe("parseAmountToCents", () => {
     "Infinity",
     "10,555",
     "1,2.3",
-    "1000000,01",
+    "12 34",
+    "1 23 456",
+    "1 234 56",
+    "999999,01",
+    "1000000",
     "€",
   ])("rejects %s", (value) => {
     expect(parseAmountToCents(value)).toBeNull();
@@ -44,11 +49,13 @@ describe("parseDonationAmount", () => {
     ["0", "nonPositive"],
     ["0,00", "nonPositive"],
     ["10,555", "precision"],
-    ["1000000,01", "tooLarge"],
+    ["999999,01", "tooLarge"],
+    ["1000000", "tooLarge"],
     ["999999999999999999999", "tooLarge"],
     ["-151", "format"],
     ["1e3", "format"],
     ["1,2.3", "format"],
+    ["12 34", "format"],
   ] as const)("classifies %s as %s", (value, code) => {
     expect(parseDonationAmount(value)).toEqual({ ok: false, code });
   });
@@ -58,6 +65,7 @@ describe("normalizeAmountEdit", () => {
   it.each([
     ["1 234,56 €", "sk", "1234,56"],
     ["1 234.56 €", "en", "1234.56"],
+    ["1 234.56 €", "cz", "1234,56"],
     ["10.5", "sk", "10,5"],
     ["10,5", "en", "10.5"],
     ["", "sk", ""],
@@ -75,8 +83,10 @@ describe("normalizeAmountEdit", () => {
     ["1e3", "format"],
     ["12a", "format"],
     ["1,2.3", "format"],
+    ["12 34", "format"],
     ["10,555", "precision"],
-    ["1000000,01", "tooLarge"],
+    ["999999,01", "tooLarge"],
+    ["1000000", "tooLarge"],
   ] as const)("rejects %s without rewriting its meaning", (value, code) => {
     expect(normalizeAmountEdit(value, "sk")).toEqual({
       accepted: false,
@@ -89,6 +99,7 @@ describe("normalizeAmountOnBlur", () => {
   it.each([
     ["0005,20", "sk", "5,20"],
     ["0005.20", "en", "5.20"],
+    ["0005.20", "cz", "5,20"],
     ["5,", "sk", "5"],
     ["000", "sk", "0"],
     ["", "en", ""],

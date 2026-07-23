@@ -1,4 +1,8 @@
-import type { DonationSelection, DonorDetails } from "@/domain/donation";
+import {
+  MAX_DONATION_CENTS,
+  type DonationSelection,
+  type DonorDetails,
+} from "@/domain/donation";
 
 import type { ContributionRequest } from "./contracts";
 
@@ -8,16 +12,17 @@ export function mapContributionRequest(
 ): ContributionRequest {
   if (
     !Number.isSafeInteger(selection.amountCents) ||
-    selection.amountCents <= 0
+    selection.amountCents <= 0 ||
+    selection.amountCents > MAX_DONATION_CENTS
   ) {
-    throw new Error("Contribution amount must use positive whole cents.");
+    throw new Error("Contribution amount is outside the supported cent range.");
   }
 
   const contributor = {
     firstName: donor.firstName,
     lastName: donor.lastName,
     email: donor.email,
-    ...(donor.phoneE164 ? { phone: donor.phoneE164 } : {}),
+    phone: donor.phoneE164,
   };
 
   return {

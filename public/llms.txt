@@ -1,0 +1,14 @@
+# GoodBoy donation application
+
+GoodBoy is a localized donation flow for supporting the GoodBoy foundation and participating dog shelters in Slovakia.
+
+## Donation flows
+
+- [Slovak donation flow](https://marosko123.github.io/goodrequest-frontend-assignment/)
+- [English donation flow](https://marosko123.github.io/goodrequest-frontend-assignment/en/)
+- [Czech donation flow](https://marosko123.github.io/goodrequest-frontend-assignment/cz/)
+
+## Information
+
+- [About GoodBoy](https://marosko123.github.io/goodrequest-frontend-assignment/about/)
+- [Contact](https://marosko123.github.io/goodrequest-frontend-assignment/contact/)

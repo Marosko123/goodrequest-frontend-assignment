@@ -1,47 +1,89 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { parsePhoneNumberFromString } from "libphonenumber-js/max";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { useTranslation } from "react-i18next";
+
+import { useLazyZodResolver } from "@/lib/validation/use-lazy-zod-resolver";
 
 import { Button } from "@/components/ui/button";
 import { ChoiceControl } from "@/components/ui/choice-control";
 import { ArrowLeftIcon } from "@/components/ui/icons";
 import { InlineAlert } from "@/components/ui/inline-alert";
-import type { DonationSelection, DonorDetails } from "@/domain/donation";
+import { useDonationStepStatus } from "@/components/layout/donation-progress-context";
+import {
+  formatPhoneForDisplay,
+  type DonationSelection,
+  type DonorDetails,
+} from "@/domain/donation";
+import { getAppLocale } from "@/i18n/config";
+import { formatCurrency } from "@/i18n/format";
 import type { ContributionResponse } from "@/lib/api/contracts";
 
 import {
-  assertContributionAccepted,
-  getSubmissionError,
-  type SubmissionError,
+  getSubmissionStateFromError,
+  type SubmissionState,
 } from "./submission";
-import styles from "./review-form.module.scss";
+import type { ReviewFormValues } from "./schema";
+import {
+  Actions,
+  Block,
+  ConsentField,
+  ConsentLabel,
+  ErrorMessage,
+  Form,
+  SubmissionFeedback,
+  Summary,
+} from "./review-form.styles";
 
-const reviewSchema = z.object({
-  consent: z.boolean().refine((value) => value, {
-    message: "Na odoslanie príspevku je potrebný váš súhlas.",
-  }),
-});
+const submissionFeedbackByState = {
+  submitting: {
+    title: "review.status.submittingTitle",
+    message: "review.status.submittingMessage",
+    tone: "info",
+  },
+  offline: {
+    title: "review.errors.offlineTitle",
+    message: "review.errors.offlineMessage",
+    tone: "warning",
+  },
+  "connection-restored": {
+    title: "review.status.restoredTitle",
+    message: "review.status.restoredMessage",
+    tone: "success",
+  },
+  "unknown-outcome": {
+    title: "review.errors.unknownTitle",
+    message: "review.errors.unknownMessage",
+    tone: "warning",
+  },
+  "rate-limited": {
+    title: "review.errors.rateLimitTitle",
+    message: "review.errors.rateLimitMessage",
+    tone: "warning",
+  },
+  invalid: {
+    title: "review.errors.invalidTitle",
+    message: "review.errors.invalidMessage",
+    tone: "error",
+  },
+  "service-unavailable": {
+    title: "review.errors.serviceTitle",
+    message: "review.errors.serviceMessage",
+    tone: "error",
+  },
+} as const;
 
-type ReviewFormValues = z.input<typeof reviewSchema>;
+type ConnectionStatus = "online" | "offline" | "restored";
+type FeedbackState = Exclude<SubmissionState, "idle">;
 
-const currencyFormatter = new Intl.NumberFormat("sk-SK", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-
-function formatPhone(phone: string | null): string | null {
-  if (!phone) {
-    return null;
-  }
-
-  return parsePhoneNumberFromString(phone)?.formatInternational() ?? phone;
-}
+const blockingFeedbackStates: ReadonlySet<FeedbackState> = new Set([
+  "offline",
+  "unknown-outcome",
+  "rate-limited",
+  "invalid",
+  "service-unavailable",
+]);
 
 export function ReviewForm({
   donor,
@@ -56,16 +98,24 @@ export function ReviewForm({
   selection: DonationSelection;
   submit: () => Promise<ContributionResponse>;
 }) {
+  const { i18n, t } = useTranslation();
+  const locale = getAppLocale(i18n.resolvedLanguage);
+  const resolver = useLazyZodResolver<ReviewFormValues>(async () =>
+    (await import("./schema")).createReviewSchema(t),
+  );
   const submitLock = useRef(false);
-  const [submissionError, setSubmissionError] =
-    useState<SubmissionError | null>(null);
+  const [submissionState, setSubmissionState] =
+    useState<SubmissionState>("idle");
+  const [connectionStatus, setConnectionStatus] =
+    useState<ConnectionStatus>("online");
   const {
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitted },
     handleSubmit,
     register,
+    trigger,
   } = useForm<ReviewFormValues>({
     defaultValues: { consent: false },
-    resolver: zodResolver(reviewSchema),
+    resolver,
     shouldFocusError: true,
   });
 
@@ -74,120 +124,184 @@ export function ReviewForm({
       return;
     }
 
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      setSubmissionState("idle");
+      setConnectionStatus("offline");
+      return;
+    }
+
     submitLock.current = true;
-    setSubmissionError(null);
+    setSubmissionState("submitting");
 
     try {
-      const response = await submit();
-      assertContributionAccepted(response);
+      await submit();
       onSuccess();
     } catch (error) {
-      const isOnline =
-        typeof navigator === "undefined" ? true : navigator.onLine;
-      setSubmissionError(getSubmissionError(error, isOnline));
+      setSubmissionState(getSubmissionStateFromError(error));
       submitLock.current = false;
     }
   }
 
+  const submissionPending = submissionState === "submitting";
+  const feedbackState: FeedbackState | null =
+    submissionState !== "idle"
+      ? submissionState
+      : connectionStatus === "offline"
+        ? "offline"
+        : connectionStatus === "restored"
+          ? "connection-restored"
+          : null;
+  const feedback = feedbackState
+    ? submissionFeedbackByState[feedbackState]
+    : null;
+  const submissionBlockedByOffline =
+    submissionState === "idle" && connectionStatus === "offline";
   const donorName = [donor.firstName, donor.lastName].filter(Boolean).join(" ");
-  const formattedPhone = formatPhone(donor.phoneE164);
-  const submitLabel = submissionError ? "Skúsiť znova" : "Odoslať formulár";
+  const donorPhone = donor.phoneE164
+    ? formatPhoneForDisplay(donor.phoneE164)
+    : null;
+  const submitLabel =
+    submissionState === "unknown-outcome"
+      ? t("review.resend")
+      : feedbackState && feedbackState !== "submitting"
+        ? t("common.retry")
+        : t("review.submit");
+  useDonationStepStatus(
+    3,
+    submissionPending
+      ? "in-progress"
+      : (feedbackState && blockingFeedbackStates.has(feedbackState)) ||
+          Object.keys(errors).length > 0
+        ? "error"
+        : "current",
+  );
+
+  useEffect(() => {
+    const handleOffline = () => setConnectionStatus("offline");
+    const handleOnline = () =>
+      setConnectionStatus((current) =>
+        current === "offline" ? "restored" : "online",
+      );
+
+    if (!navigator.onLine) {
+      handleOffline();
+    }
+
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isSubmitted) {
+      void trigger();
+    }
+  }, [i18n.resolvedLanguage, isSubmitted, trigger]);
 
   return (
-    <form
-      aria-label="Potvrdenie príspevku"
-      className={styles.form}
+    <Form
+      aria-busy={submissionPending || undefined}
+      aria-label={t("review.formLabel")}
       noValidate
       onSubmit={(event) => {
         void handleSubmit(submitForm)(event);
       }}
     >
-      <section
-        aria-labelledby="contribution-summary-title"
-        className={styles.block}
-      >
-        <h2 id="contribution-summary-title">Zhrnutie</h2>
-        <dl className={styles.summary}>
+      <Block aria-labelledby="contribution-summary-title" data-primary>
+        <h2 id="contribution-summary-title">{t("review.summary")}</h2>
+        <Summary>
           <div>
-            <dt>Forma pomoci</dt>
+            <dt>{t("review.helpType")}</dt>
             <dd>
               {selection.target === "foundation"
-                ? "Finančný príspevok celej nadácii"
-                : "Finančný príspevok konkrétnemu útulku"}
+                ? t("review.foundationHelp")
+                : t("review.shelterHelp")}
             </dd>
           </div>
           {selection.target === "shelter" ? (
             <div>
-              <dt>Útulok</dt>
+              <dt>{t("review.shelter")}</dt>
               <dd>{selection.shelter.name}</dd>
             </div>
           ) : null}
           <div>
-            <dt>Suma príspevku</dt>
-            <dd>{currencyFormatter.format(selection.amountCents / 100)}</dd>
+            <dt>{t("review.amount")}</dt>
+            <dd>{formatCurrency(selection.amountCents / 100, locale)}</dd>
           </div>
-        </dl>
-      </section>
+        </Summary>
+      </Block>
 
-      <section aria-label="Vaše údaje" className={styles.block}>
-        <dl className={styles.summary}>
+      <Block aria-label={t("review.personalData")}>
+        <Summary>
           <div>
-            <dt>Meno a priezvisko</dt>
+            <dt>{t("review.fullName")}</dt>
             <dd>{donorName}</dd>
           </div>
           <div>
-            <dt>E-mail</dt>
+            <dt>{t("review.email")}</dt>
             <dd>{donor.email}</dd>
           </div>
-          {formattedPhone ? (
+          {donorPhone ? (
             <div>
-              <dt>Telefónne číslo</dt>
-              <dd>{formattedPhone}</dd>
+              <dt>{t("review.phone")}</dt>
+              <dd>{donorPhone}</dd>
             </div>
           ) : null}
-        </dl>
-      </section>
+        </Summary>
+      </Block>
 
-      <div className={styles.consentField}>
-        <label className={styles.consentLabel}>
+      <ConsentField>
+        <ConsentLabel>
           <ChoiceControl
             {...register("consent")}
             aria-describedby={errors.consent ? "consent-error" : undefined}
             aria-invalid={errors.consent ? "true" : undefined}
+            disabled={submissionPending}
+            required
             size="sm"
             type="checkbox"
           />
-          <span>Súhlasím so spracovaním mojich osobných údajov</span>
-        </label>
+          <span>{t("review.consent")}</span>
+        </ConsentLabel>
         {errors.consent?.message ? (
-          <p className={styles.error} id="consent-error" role="alert">
+          <ErrorMessage id="consent-error" role="alert">
             {errors.consent.message}
-          </p>
+          </ErrorMessage>
         ) : null}
-      </div>
+      </ConsentField>
 
-      <div aria-live="polite">
-        {submissionError ? (
-          <InlineAlert title={submissionError.title} tone="error">
-            {submissionError.message}
+      <SubmissionFeedback id="submission-feedback">
+        {feedback ? (
+          <InlineAlert title={t(feedback.title)} tone={feedback.tone}>
+            {t(feedback.message)}
           </InlineAlert>
         ) : null}
-      </div>
+      </SubmissionFeedback>
 
-      <div className={styles.actions}>
+      <Actions>
         <Button
-          disabled={isSubmitting}
+          disabled={submissionPending}
           icon={<ArrowLeftIcon />}
           iconPosition="start"
           onClick={onBack}
           variant="secondary"
         >
-          Späť
+          {t("common.back")}
         </Button>
-        <Button loading={isSubmitting} type="submit">
+        <Button
+          aria-describedby={feedback ? "submission-feedback" : undefined}
+          disabled={submissionBlockedByOffline}
+          loading={submissionPending}
+          loadingLabel={t("review.submitting")}
+          type="submit"
+        >
           {submitLabel}
         </Button>
-      </div>
-    </form>
+      </Actions>
+    </Form>
   );
 }

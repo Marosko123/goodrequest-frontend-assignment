@@ -55,7 +55,7 @@ type ContributionResponse = {
 };
 ```
 
-The assignment makes first name optional, while the API requires the `firstName` key. An omitted first name is therefore mapped to an empty string. `shelterID` is omitted for a foundation contribution. Phone is omitted when empty and otherwise sent in E.164 format.
+The assignment makes first name optional, while the API requires the `firstName` key. An omitted first name is therefore mapped to an empty string. `shelterID` is omitted for a foundation contribution. The required Slovak or Czech phone is always sent in E.164 format. The local wire guard accepts exactly one contributor, integer shelter IDs and contribution values with at most cent precision up to 999,999 €.
 
 ## Runtime policy
 
@@ -63,4 +63,7 @@ The assignment makes first name optional, while the API requires the `firstName`
 - A non-2xx response, invalid JSON, HTML response, or schema drift becomes a typed application error.
 - GET queries may retry once for network and 5xx failures. POST never retries automatically.
 - Submission has a synchronous in-flight lock. Timeout or connection loss after dispatch is reported as an unknown outcome; the UI never claims success or retries silently.
-- No personal data is written to storage, logs, query keys, URLs, analytics, or error telemetry.
+- Offline state prevents dispatch. Restoring connectivity only enables a clearly labelled manual retry; it never submits the saved in-memory form automatically.
+- Invalid requests and rate limits are reported as explicit retryable states. Timeout, network failure, invalid responses and 5xx failures keep the outcome unknown because the server may already have accepted the contribution.
+- The mandatory review consent is step-local form state. It gates submission but is not part of `ContributionRequest`; the strict request guard rejects unsupported metadata instead of silently forwarding it.
+- Personal data reaches no sink on the API path: not query keys, URLs, logs, analytics or error telemetry. The one place it is persisted is the documented `sessionStorage` flow key, so a mid-flow reload does not discard typed answers; see [design decisions](./design-decisions.md).

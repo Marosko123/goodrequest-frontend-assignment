@@ -1,9 +1,18 @@
 import "@testing-library/jest-dom/vitest";
+import "jest-styled-components/vitest";
 
+import i18next from "i18next";
 import { cleanup } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
+import { initReactI18next } from "react-i18next";
 
+import { getI18nOptions } from "@/i18n/instance";
 import { server } from "@/test/server";
+
+// Default instance for component tests rendered without AppI18nProvider.
+// Tests that mount the provider resolve their instance from context instead.
+i18next.use(initReactI18next);
+void i18next.init(getI18nOptions("sk"));
 
 Object.defineProperty(window, "matchMedia", {
   writable: true,
@@ -32,5 +41,7 @@ beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => {
   cleanup();
   server.resetHandlers();
+  sessionStorage.clear();
+  void i18next.changeLanguage("sk");
 });
 afterAll(() => server.close());

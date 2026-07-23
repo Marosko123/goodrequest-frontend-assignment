@@ -1,4 +1,8 @@
-import styles from "./form-error-summary.module.scss";
+"use client";
+
+import { useTranslation } from "react-i18next";
+
+import { ErrorList, Summary, SummaryTitle } from "./form-error-summary.styles";
 
 export type FormErrorItem = {
   fieldId: string;
@@ -11,21 +15,22 @@ export function FormErrorSummary({
 }: {
   errors: readonly FormErrorItem[];
 }) {
+  const { t } = useTranslation();
+
   if (errors.length === 0) {
     return null;
   }
 
   return (
-    <section
+    <Summary
       aria-labelledby="form-error-summary-title"
-      className={styles.summary}
       role="alert"
       tabIndex={-1}
     >
-      <h2 className={styles.title} id="form-error-summary-title">
-        Formulár obsahuje chyby
-      </h2>
-      <ul className={styles.list}>
+      <SummaryTitle id="form-error-summary-title">
+        {t("common.formErrors")}
+      </SummaryTitle>
+      <ErrorList>
         {errors.map((error) => (
           <li key={error.fieldId}>
             <a
@@ -36,7 +41,7 @@ export function FormErrorSummary({
             </a>
           </li>
         ))}
-      </ul>
-    </section>
+      </ErrorList>
+    </Summary>
   );
 }

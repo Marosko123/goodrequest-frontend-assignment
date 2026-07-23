@@ -1,30 +1,40 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
-import { CheckIcon } from "@/components/ui/icons";
+import { PrimaryActionLink } from "@/components/ui/primary-action-link";
 import { useDonationFlow } from "@/features/donation-flow/context";
+import { getAppLocale, getLocalizedPath } from "@/i18n/config";
 
-import styles from "./success-content.module.scss";
+import {
+  Celebration,
+  Content,
+  PawLeft,
+  PawRight,
+  SuccessIcon,
+} from "./success-content.styles";
 
 export function SuccessContent() {
   const { dispatch } = useDonationFlow();
-
-  useEffect(() => {
-    dispatch({ type: "flowReset" });
-  }, [dispatch]);
+  const { i18n, t } = useTranslation();
+  const locale = getAppLocale(i18n.resolvedLanguage);
 
   return (
-    <section className={styles.content}>
-      <span aria-hidden="true" className={styles.celebration}>
-        <CheckIcon className={styles.icon} />
-      </span>
-      <h1>Ďakujeme za váš príspevok</h1>
-      <p>Príspevok bol úspešne prijatý.</p>
-      <Link className={styles.link} href="/" prefetch={false}>
-        Prispieť znova
-      </Link>
-    </section>
+    <Content data-ui="success-content">
+      <h1>{t("success.title")}</h1>
+      <p>{t("success.message")}</p>
+      <Celebration aria-hidden="true" data-ui="success-celebration">
+        <PawLeft />
+        <SuccessIcon />
+        <PawRight />
+      </Celebration>
+      <PrimaryActionLink
+        href={getLocalizedPath(locale, "/")}
+        onClick={() => dispatch({ type: "flowReset" })}
+        prefetch={false}
+      >
+        {t("success.again")}
+      </PrimaryActionLink>
+    </Content>
   );
 }

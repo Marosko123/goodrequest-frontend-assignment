@@ -1,23 +1,17 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-import styles from "./button.module.scss";
+import { ButtonRoot, IconSlot, Spinner } from "./button.styles";
 
 type ButtonVariant = "primary" | "secondary" | "destructive" | "link";
 type ButtonSize = "sm" | "md" | "lg" | "xl";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   loading?: boolean;
+  loadingLabel?: ReactNode;
   variant?: ButtonVariant;
   icon?: ReactNode;
   iconPosition?: "start" | "end";
   size?: ButtonSize;
-};
-
-const variantClasses: Record<ButtonVariant, string> = {
-  primary: styles.primary!,
-  secondary: styles.secondary!,
-  destructive: styles.destructive!,
-  link: styles.link!,
 };
 
 export function Button({
@@ -27,37 +21,35 @@ export function Button({
   icon,
   iconPosition = "end",
   loading = false,
+  loadingLabel,
   size = "xl",
   type = "button",
   variant = "primary",
   ...buttonProps
 }: ButtonProps) {
-  const classes = [styles.button, variantClasses[variant], className]
-    .filter(Boolean)
-    .join(" ");
-
   return (
-    <button
+    <ButtonRoot
       {...buttonProps}
       aria-busy={loading || undefined}
-      className={classes}
+      className={className}
+      data-loading={loading || undefined}
       data-size={size}
       data-variant={variant}
       disabled={disabled || loading}
       type={type}
     >
-      {loading ? <span aria-hidden="true" className={styles.spinner} /> : null}
+      {loading ? <Spinner data-size={size === "sm" ? "sm" : "md"} /> : null}
       {!loading && icon && iconPosition === "start" ? (
-        <span aria-hidden="true" className={styles.icon}>
+        <IconSlot aria-hidden="true" data-position="start">
           {icon}
-        </span>
+        </IconSlot>
       ) : null}
-      <span>{children}</span>
+      <span>{loading ? (loadingLabel ?? children) : children}</span>
       {!loading && icon && iconPosition === "end" ? (
-        <span aria-hidden="true" className={styles.icon}>
+        <IconSlot aria-hidden="true" data-position="end">
           {icon}
-        </span>
+        </IconSlot>
       ) : null}
-    </button>
+    </ButtonRoot>
   );
 }

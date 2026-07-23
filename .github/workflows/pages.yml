@@ -8,7 +8,6 @@ on:
       - ".github/workflows/pages.yml"
       - "app/**"
       - "pages/**"
-      - "placeholder/**"
       - "src/**"
       - "e2e/**"
       - "public/**"
@@ -83,14 +82,38 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Browser binaries are ~150 MB and unchanged between runs. No restore-keys:
+      # a partial restore yields a revision the pinned client refuses to launch,
+      # and the lockfile hash already invalidates this on a Playwright bump.
+      - name: Restore Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@a7833574556fa59680c1b7cb190c1735db73ebf0 # v5.0.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('pnpm-lock.yaml') }}
+
       - name: Install Chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: pnpm exec playwright install --with-deps chromium
+
+      # Cached binaries still need the apt-level libraries on a fresh runner.
+      - name: Install Chromium system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+
+      # The suite runs against out/, so it exercises the artifact that ships
+      # rather than the dev server. Also feeds the performance budgets below.
+      - name: Build static export
+        run: pnpm build
 
       - name: Run browser tests
         run: pnpm test:e2e
 
-      - name: Build performance artifact
-        run: pnpm build
+      # Runs before the Lighthouse budgets: a route that outgrew its frozen
+      # gzip baseline should name the regression itself rather than surface as a
+      # score drop. Both read the same out/ artifact built above.
+      - name: Check bundle budgets
+        run: pnpm bundle:check
 
       - name: Check performance budgets
         run: pnpm performance
@@ -99,40 +122,17 @@ jobs:
     name: Build static site
     needs: [quality, browser]
     runs-on: ubuntu-latest
-    outputs:
-      mode: ${{ steps.preflight.outputs.mode }}
-      artifact_path: ${{ steps.preflight.outputs.artifact_path }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Select deployment mode
-        id: preflight
-        shell: bash
-        run: |
-          if [[ -f package.json && -f pnpm-lock.yaml ]]; then
-            echo "mode=next" >> "$GITHUB_OUTPUT"
-            echo "artifact_path=out" >> "$GITHUB_OUTPUT"
-          elif [[ -f package.json || -f pnpm-lock.yaml ]]; then
-            echo "Both package.json and pnpm-lock.yaml are required for a Next.js build." >&2
-            exit 1
-          elif [[ -f placeholder/index.html ]]; then
-            echo "mode=placeholder" >> "$GITHUB_OUTPUT"
-            echo "artifact_path=placeholder" >> "$GITHUB_OUTPUT"
-          else
-            echo "Neither a complete Next.js project nor placeholder/index.html is available." >&2
-            exit 1
-          fi
-
       - name: Set up pnpm
-        if: steps.preflight.outputs.mode == 'next'
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
         with:
           version: 11.15.1
           run_install: false
 
       - name: Set up Node.js
-        if: steps.preflight.outputs.mode == 'next'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 24
@@ -141,11 +141,9 @@ jobs:
 
       # The repository config handles export and base path; generator injection does not support .ts configs.
       - name: Configure Pages
-        if: steps.preflight.outputs.mode == 'next'
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
       - name: Restore Next.js cache
-        if: steps.preflight.outputs.mode == 'next'
         uses: actions/cache@a7833574556fa59680c1b7cb190c1735db73ebf0 # v5.0.0
         with:
           path: .next/cache
@@ -154,22 +152,20 @@ jobs:
             ${{ runner.os }}-node-24-nextjs-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Install dependencies
-        if: steps.preflight.outputs.mode == 'next'
         run: pnpm install --frozen-lockfile
 
       - name: Build static export
-        if: steps.preflight.outputs.mode == 'next'
         run: pnpm build
         env:
           NEXT_PUBLIC_BASE_PATH: /goodrequest-frontend-assignment
 
       - name: Verify Pages artifact
-        run: test -f "${{ steps.preflight.outputs.artifact_path }}/index.html"
+        run: test -f out/index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: ${{ steps.preflight.outputs.artifact_path }}
+          path: out
 
   deploy:
     name: Deploy to Pages

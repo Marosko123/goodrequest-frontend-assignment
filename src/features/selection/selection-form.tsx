@@ -1,39 +1,75 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
-import { type CSSProperties, useMemo } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
+import { useLazyZodResolver } from "@/lib/validation/use-lazy-zod-resolver";
 
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon, ArrowRightIcon } from "@/components/ui/icons";
+import { useDonationStepStatus } from "@/components/layout/donation-progress-context";
 import {
   FormErrorSummary,
   type FormErrorItem,
 } from "@/components/ui/form-error-summary";
-import { InlineAlert } from "@/components/ui/inline-alert";
-import { SelectField } from "@/components/ui/select-field";
+import { Dropdown, type DropdownOption } from "@/components/ui/dropdown";
 import { TextField } from "@/components/ui/text-field";
 import type { DonationSelection, Shelter } from "@/domain/donation";
-import { sheltersQueryOptions } from "@/lib/api/queries";
+import type { SelectionDraft } from "@/features/donation-flow/state";
+import { formatCurrency } from "@/i18n/format";
+import { getAppLocale } from "@/i18n/config";
+import type { DonationRoutePrefetchIntent } from "@/lib/navigation/use-donation-route-prefetch";
 
 import {
   formatAmountInput,
+  getAmountErrorMessage,
   normalizeAmountEdit,
   normalizeAmountOnBlur,
+  parseDonationAmount,
   parseAmountToCents,
+  type AmountErrorCode,
 } from "./amount";
-import { createSelectionSchema, type SelectionFormValues } from "./schema";
-import styles from "./selection-form.module.scss";
+import type { SelectionFormValues } from "./schema";
+import {
+  Actions,
+  AmountFieldset,
+  Currency,
+  CustomAmount,
+  Form,
+  Preset,
+  Presets,
+  ShelterRegion,
+  ShelterSection,
+  TargetFieldset,
+  TargetLegend,
+  TargetOption,
+  TargetOptions,
+} from "./selection-form.styles";
 
 const amountPresets = [5, 10, 20, 30, 50, 100] as const;
 const emptyShelters: readonly Shelter[] = [];
+const noShelterOptions: readonly DropdownOption<string>[] = [];
+const ShelterQueryField = lazy(() => import("./shelter-query-field"));
 
 function getDefaultValues(
+  initialDraft?: SelectionDraft,
   initialValue?: DonationSelection,
 ): SelectionFormValues {
+  if (initialDraft) {
+    return initialDraft;
+  }
+
   if (!initialValue) {
-    return { target: "foundation", shelterId: null, amount: "50" };
+    return { target: "foundation", shelterId: null, amount: "" };
   }
 
   return {
@@ -47,238 +83,325 @@ function getDefaultValues(
 }
 
 export function SelectionForm({
+  initialDraft,
   initialValue,
+  onDraftChange,
   onComplete,
+  nextStepPrefetch,
 }: {
+  initialDraft?: SelectionDraft;
   initialValue?: DonationSelection;
+  onDraftChange?: (draft: SelectionDraft) => void;
   onComplete: (selection: DonationSelection) => void;
+  nextStepPrefetch?: DonationRoutePrefetchIntent;
 }) {
-  const sheltersQuery = useQuery(sheltersQueryOptions());
-  const shelters = sheltersQuery.data ?? emptyShelters;
-  const schema = useMemo(() => createSelectionSchema(shelters), [shelters]);
+  const { i18n, t } = useTranslation();
+  const locale = getAppLocale(i18n.resolvedLanguage);
+  const [shelters, setShelters] = useState<readonly Shelter[]>(emptyShelters);
+  const [sheltersError, setSheltersError] = useState(false);
+  const [sheltersActivated, setSheltersActivated] = useState(
+    initialDraft?.target === "shelter" || initialValue?.target === "shelter",
+  );
+  const resolver = useLazyZodResolver<SelectionFormValues, DonationSelection>(
+    async () => (await import("./schema")).createSelectionSchema(shelters, t),
+  );
   const {
     control,
     formState: { errors, isSubmitted },
+    clearErrors,
     handleSubmit,
-    register,
+    setError,
     setValue,
+    subscribe,
+    trigger,
   } = useForm<SelectionFormValues, unknown, DonationSelection>({
-    defaultValues: getDefaultValues(initialValue),
-    resolver: zodResolver(schema),
+    defaultValues: getDefaultValues(initialDraft, initialValue),
+    resolver,
+    mode: "onBlur",
+    reValidateMode: "onChange",
     shouldFocusError: true,
   });
 
   const target = useWatch({ control, name: "target" });
   const amount = useWatch({ control, name: "amount" });
   const selectedAmountCents = parseAmountToCents(amount);
+  const previousLanguage = useRef(i18n.resolvedLanguage);
+  const amountStyle = {
+    "--amount-characters": Math.max(1, Math.min(amount.length, 10)),
+  } as CSSProperties;
   const errorItems: FormErrorItem[] = [];
+  const handleShelterQueryChange = useCallback(
+    (nextShelters: readonly Shelter[], isError: boolean) => {
+      setShelters(nextShelters);
+      setSheltersError(isError);
+    },
+    [],
+  );
+
+  const updateAmount = (rawValue: string) => {
+    const result = normalizeAmountEdit(rawValue, locale);
+
+    if (!result.accepted) {
+      setError("amount", {
+        type: `manual-${result.code}`,
+        message: getAmountErrorMessage(result.code, t),
+      });
+      return;
+    }
+
+    if (parseDonationAmount(result.value).ok) {
+      clearErrors("amount");
+    }
+    setValue("amount", result.value, {
+      shouldDirty: true,
+      shouldValidate: Boolean(errors.amount),
+    });
+  };
+
+  useEffect(() => {
+    if (!onDraftChange) {
+      return;
+    }
+
+    return subscribe({
+      formState: { values: true },
+      callback: ({ values }) =>
+        onDraftChange({ ...values, shelterId: values.shelterId ?? null }),
+    });
+  }, [onDraftChange, subscribe]);
+
+  useEffect(() => {
+    if (previousLanguage.current === i18n.resolvedLanguage) {
+      return;
+    }
+
+    previousLanguage.current = i18n.resolvedLanguage;
+    const manualAmountType = errors.amount?.type;
+    if (manualAmountType?.startsWith("manual-")) {
+      const code = manualAmountType.slice("manual-".length) as AmountErrorCode;
+      setError("amount", {
+        type: manualAmountType,
+        message: getAmountErrorMessage(code, t),
+      });
+    }
+
+    const fieldsToValidate: (keyof SelectionFormValues)[] = [];
+    if (errors.shelterId) {
+      fieldsToValidate.push("shelterId");
+    }
+    if (errors.amount && !manualAmountType?.startsWith("manual-")) {
+      fieldsToValidate.push("amount");
+    }
+    if (fieldsToValidate.length > 0) {
+      void trigger(fieldsToValidate);
+    }
+  }, [
+    errors.amount,
+    errors.shelterId,
+    i18n.resolvedLanguage,
+    setError,
+    t,
+    trigger,
+  ]);
+
+  useEffect(() => {
+    const normalized = normalizeAmountEdit(amount, locale);
+    if (normalized.accepted && normalized.value !== amount) {
+      setValue("amount", normalized.value, {
+        shouldValidate: Boolean(errors.amount),
+      });
+    }
+  }, [amount, errors.amount, locale, setValue]);
 
   if (errors.shelterId?.message) {
     errorItems.push({
       fieldId: "shelter-id",
-      label: "Útulok",
+      label: t("selection.shelterLabel"),
       message: errors.shelterId.message,
     });
   }
   if (errors.amount?.message) {
     errorItems.push({
       fieldId: "amount",
-      label: "Vlastná suma",
+      label: t("selection.customAmount"),
       message: errors.amount.message,
     });
   }
 
+  useDonationStepStatus(
+    1,
+    errorItems.length > 0 || (target === "shelter" && sheltersError)
+      ? "error"
+      : "current",
+  );
+
+  // Rendered both as the lazy chunk's Suspense fallback and before the shelter
+  // branch is ever activated, so the control keeps its box and its label instead
+  // of appearing only once the query chunk resolves.
+  const shelterFieldPlaceholder = (
+    <Controller
+      control={control}
+      name="shelterId"
+      render={({ field }) => (
+        <Dropdown
+          disabled
+          error={errors.shelterId?.message}
+          id="shelter-id"
+          label={t("selection.shelterLabel")}
+          onValueChange={() => undefined}
+          options={noShelterOptions}
+          placeholder={t("selection.sheltersLoading")}
+          ref={field.ref}
+          required
+          value={field.value || null}
+        />
+      )}
+    />
+  );
+
   return (
-    <form
-      className={styles.form}
+    <Form
       noValidate
       onSubmit={handleSubmit((selection) => onComplete(selection))}
     >
-      <fieldset className={styles.targetFieldset}>
-        <legend className={styles.targetLegend}>Forma pomoci</legend>
+      <TargetFieldset>
+        <TargetLegend>{t("selection.targetLegend")}</TargetLegend>
         <Controller
           control={control}
           name="target"
           render={({ field }) => (
-            <div className={styles.targetOptions} data-target={field.value}>
-              <label
-                className={styles.targetOption}
-                data-selected={field.value === "shelter"}
-              >
+            <TargetOptions data-target={field.value}>
+              <TargetOption data-selected={field.value === "shelter"}>
                 <input
                   checked={field.value === "shelter"}
                   name={field.name}
                   onBlur={field.onBlur}
-                  onChange={() => field.onChange("shelter")}
+                  onChange={() => {
+                    setSheltersActivated(true);
+                    field.onChange("shelter");
+                  }}
                   ref={field.ref}
                   type="radio"
                   value="shelter"
                 />
-                <span>Prispieť konkrétnemu útulku</span>
-              </label>
-              <label
-                className={styles.targetOption}
-                data-selected={field.value === "foundation"}
-              >
+                <span>{t("selection.shelterTarget")}</span>
+              </TargetOption>
+              <TargetOption data-selected={field.value === "foundation"}>
                 <input
                   checked={field.value === "foundation"}
                   name={field.name}
                   onBlur={field.onBlur}
                   onChange={() => {
                     field.onChange("foundation");
-                    setValue("shelterId", null);
+                    setValue("shelterId", null, { shouldDirty: true });
+                    clearErrors("shelterId");
                   }}
                   ref={field.ref}
                   type="radio"
                   value="foundation"
                 />
-                <span>Prispieť celej nadácii</span>
-              </label>
-            </div>
+                <span>{t("selection.foundationTarget")}</span>
+              </TargetOption>
+            </TargetOptions>
           )}
         />
-      </fieldset>
+      </TargetFieldset>
 
-      <div
-        aria-hidden={target !== "shelter"}
-        className={styles.shelterRegion}
+      <ShelterRegion
+        aria-hidden={target !== "shelter" || undefined}
         data-expanded={target === "shelter"}
         data-testid="shelter-region"
       >
-        <div className={styles.shelterSection}>
-          {sheltersQuery.isError ? (
-            <InlineAlert
-              action={
-                <Button
-                  onClick={() => void sheltersQuery.refetch()}
-                  variant="link"
-                >
-                  Skúsiť znova
-                </Button>
-              }
-              title="Útulky sa nepodarilo načítať"
-              tone="error"
-            >
-              Skontrolujte pripojenie a skúste načítanie zopakovať.
-            </InlineAlert>
-          ) : null}
+        <ShelterSection>
+          {sheltersActivated ? (
+            <Suspense fallback={shelterFieldPlaceholder}>
+              <ShelterQueryField
+                control={control}
+                enabled={target === "shelter"}
+                isSubmitted={isSubmitted}
+                onQueryChange={handleShelterQueryChange}
+                setValue={setValue}
+                {...(errors.shelterId ? { error: errors.shelterId } : {})}
+              />
+            </Suspense>
+          ) : (
+            shelterFieldPlaceholder
+          )}
+        </ShelterSection>
+      </ShelterRegion>
+
+      <AmountFieldset>
+        <legend>{t("selection.amountLegend")}</legend>
+        <CustomAmount
+          data-amount-size={
+            amount.length >= 9
+              ? "long"
+              : amount.length >= 7
+                ? "medium"
+                : "short"
+          }
+          style={amountStyle}
+        >
           <Controller
             control={control}
-            name="shelterId"
+            name="amount"
             render={({ field }) => (
-              <SelectField
-                data={shelters.map((shelter) => ({
-                  value: shelter.id.toString(),
-                  label: shelter.name,
-                }))}
-                disabled={
-                  target !== "shelter" ||
-                  sheltersQuery.isPending ||
-                  sheltersQuery.isError
-                }
-                error={errors.shelterId?.message}
-                id="shelter-id"
-                label="Útulok"
-                onBlur={field.onBlur}
-                onChange={field.onChange}
-                placeholder={
-                  sheltersQuery.isPending
-                    ? "Načítavam útulky…"
-                    : "Vyberte útulok zo zoznamu"
-                }
+              <TextField
+                autoComplete="off"
+                error={errors.amount?.message}
+                id="amount"
+                inputMode="decimal"
+                label={t("selection.customAmount")}
+                name={field.name}
+                onBlur={() => {
+                  const normalized = normalizeAmountOnBlur(field.value, locale);
+                  if (normalized !== field.value) {
+                    field.onChange(normalized);
+                  }
+                  if (errors.amount?.type?.startsWith("manual-")) {
+                    return;
+                  }
+                  field.onBlur();
+                }}
+                onChange={(event) => updateAmount(event.target.value)}
+                placeholder="0"
                 ref={field.ref}
                 required
-                value={field.value || null}
+                value={field.value}
               />
             )}
           />
-        </div>
-      </div>
-
-      <fieldset className={styles.amountFieldset}>
-        <legend>Suma, ktorou chcem prispieť</legend>
-        <div
-          className={styles.customAmount}
-          data-amount-size={
-            amount.length > 8 ? "long" : amount.length > 6 ? "medium" : "short"
-          }
-          style={
-            {
-              "--amount-characters": Math.max(amount.length, 1),
-            } as CSSProperties
-          }
-        >
-          <TextField
-            {...register("amount", {
-              onBlur: (event) => {
-                setValue(
-                  "amount",
-                  normalizeAmountOnBlur(event.target.value, "sk"),
-                  {
-                    shouldDirty: true,
-                    shouldValidate: isSubmitted,
-                  },
-                );
-              },
-              onChange: (event) => {
-                const normalized = normalizeAmountEdit(
-                  event.target.value,
-                  "sk",
-                );
-                if (normalized.accepted) {
-                  setValue("amount", normalized.value, {
-                    shouldDirty: true,
-                    shouldValidate: isSubmitted,
-                  });
-                }
-              },
-            })}
-            autoComplete="off"
-            error={errors.amount?.message}
-            id="amount"
-            inputMode="decimal"
-            label="Vlastná suma"
-            placeholder="0"
-          />
-          <span aria-hidden="true" className={styles.currency}>
-            €
-          </span>
-        </div>
-        <div aria-label="Predvolené sumy" className={styles.presets}>
+          <Currency aria-hidden="true">€</Currency>
+        </CustomAmount>
+        <Presets aria-label={t("selection.presetAmounts")} role="group">
           {amountPresets.map((preset) => (
-            <button
+            <Preset
               aria-pressed={selectedAmountCents === preset * 100}
-              className={styles.preset}
               key={preset}
-              onClick={() =>
-                setValue("amount", preset.toString(), {
-                  shouldDirty: true,
-                  shouldValidate: isSubmitted,
-                })
-              }
+              onClick={() => updateAmount(preset.toString())}
               type="button"
             >
-              {preset} €
-            </button>
+              {formatCurrency(preset, locale)}
+            </Preset>
           ))}
-        </div>
-      </fieldset>
+        </Presets>
+      </AmountFieldset>
 
       {isSubmitted ? <FormErrorSummary errors={errorItems} /> : null}
 
-      <div className={styles.actions}>
+      <Actions>
         <Button
           disabled
           icon={<ArrowLeftIcon />}
           iconPosition="start"
           variant="secondary"
         >
-          Späť
+          {t("common.back")}
         </Button>
-        <Button icon={<ArrowRightIcon />} type="submit">
-          Pokračovať
+        <Button {...nextStepPrefetch} icon={<ArrowRightIcon />} type="submit">
+          {t("common.continue")}
         </Button>
-      </div>
-    </form>
+      </Actions>
+    </Form>
   );
 }

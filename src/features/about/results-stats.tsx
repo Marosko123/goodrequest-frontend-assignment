@@ -1,66 +1,78 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
 import { InlineAlert } from "@/components/ui/inline-alert";
+import { formatCurrency, formatNumber } from "@/i18n/format";
+import { getAppLocale } from "@/i18n/config";
 import { resultsQueryOptions } from "@/lib/api/queries";
 
-import styles from "./results-stats.module.scss";
-
-const currencyFormatter = new Intl.NumberFormat("sk-SK", {
-  style: "currency",
-  currency: "EUR",
-  minimumFractionDigits: 0,
-  maximumFractionDigits: 2,
-});
-const numberFormatter = new Intl.NumberFormat("sk-SK");
+import {
+  Content,
+  LoadingGrid,
+  Skeleton,
+  StatsGrid,
+} from "./results-stats.styles";
 
 export function ResultsStats() {
+  const { i18n, t } = useTranslation();
+  const locale = getAppLocale(i18n.resolvedLanguage);
   const results = useQuery(resultsQueryOptions());
 
   if (results.isPending) {
     return (
-      <div
-        aria-label="Načítavam štatistiky"
-        className={styles.grid}
-        role="status"
-      >
-        <div className={styles.skeleton} />
-        <div className={styles.skeleton} />
-      </div>
+      <LoadingGrid aria-label={t("stats.loading")} role="status">
+        <Skeleton />
+        <Skeleton />
+      </LoadingGrid>
     );
   }
 
-  if (results.isError) {
+  if (!results.data) {
     return (
       <InlineAlert
         action={
           <Button onClick={() => void results.refetch()} variant="secondary">
-            Skúsiť znova
+            {t("common.retry")}
           </Button>
         }
-        title="Štatistiky sa nepodarilo načítať"
+        title={t("stats.loadTitle")}
         tone="error"
       >
-        Aktuálne hodnoty nie sú dostupné. Namiesto nich nezobrazujeme neaktuálne
-        údaje.
+        {t("stats.loadMessage")}
       </InlineAlert>
     );
   }
 
   return (
-    <dl className={styles.grid}>
-      <div>
-        <dd>
-          {currencyFormatter.format(results.data.contributionCents / 100)}
-        </dd>
-        <dt>Celková vyzbieraná hodnota</dt>
-      </div>
-      <div>
-        <dd>{numberFormatter.format(results.data.contributors)}</dd>
-        <dt>Počet darcov</dt>
-      </div>
-    </dl>
+    <Content>
+      <StatsGrid>
+        <div>
+          <dd>
+            {formatCurrency(results.data.contributionCents / 100, locale)}
+          </dd>
+          <dt>{t("stats.contribution")}</dt>
+        </div>
+        <div>
+          <dd>{formatNumber(results.data.contributors, locale)}</dd>
+          <dt>{t("stats.contributors")}</dt>
+        </div>
+      </StatsGrid>
+      {results.isRefetchError ? (
+        <InlineAlert
+          action={
+            <Button onClick={() => void results.refetch()} variant="secondary">
+              {t("common.retry")}
+            </Button>
+          }
+          title={t("stats.refreshTitle")}
+          tone="warning"
+        >
+          {t("stats.refreshMessage")}
+        </InlineAlert>
+      ) : null}
+    </Content>
   );
 }

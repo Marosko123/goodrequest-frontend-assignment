@@ -1,93 +1,116 @@
-# Zadanie Frontend developer GoodRequest
+# GoodBoy donation flow
 
-Cieľom zadania je vytvoriť jednoduchú aplikáciu v Next.js, ktorá slúži ako formulár pre nadáciu GoodBoy na podporu slovenských útulkov pre psy.
+A localized, accessible three-step donation flow built for the GoodRequest
+frontend assignment. Static Next.js export, no server runtime, deployed to
+GitHub Pages.
 
-**Aplikácia by mala umožňovať potenciálnym podporovateľom:**
+**Live:** <https://marosko123.github.io/goodrequest-frontend-assignment/>
 
-- zvoliť si formu pomoci- všeobecný príspevok pre nadáciu alebo príspevok pre konkrétny útulok
-- vybrať si konkrétny útulok zo zoznamu zapojených útulkov (nepovinné pole v prípade všeobecného príspevku, v opačnom prípade povinné pole)
-- zvoliť si výšku príspevku, pričom je možné nastaviť aj vlastnú hodnotu (povinné pole)
-- vyplniť svoje osobné údaje:
-    - meno- nepovinné pole (2-20 znakov)
-    - priezvisko- povinné pole (2-30 znakov)
-    - e-mail - validný formát e-mailovej adresy
-    - telefón - slovenské alebo české číslo s predvoľbou +420 / +421 so zobrazením zvolenej krajiny vo forme vlajky štátu
-    - potvrdiť súhlas so spracovaním osobných údajov (povinné pole)
-    - odoslať zvalidovaný formulár, prípadne zrozumiteľne oznámiť používateľovi chybový stav
-- pozrieť si kontaktné údaje organizácie v rámci stránky Kontakt
-- zistiť celkovú vyzbieranú sumu a počet/zoznam darcov (tieto údaje sa pravidelne aktualizujú a sú dostupné cez endpoint opísaný nižšie)
+|                 |                                                 |
+| --------------- | ----------------------------------------------- |
+| Framework       | Next.js 16 (App Router, `output: "export"`)     |
+| Language        | TypeScript 5.9, strict                          |
+| Server state    | TanStack Query 5                                |
+| Client state    | Context + reducer                               |
+| Forms           | React Hook Form + Zod                           |
+| Styling         | styled-components 6 (SWC transform, RSC-native) |
+| Localization    | i18next / react-i18next — `sk`, `en`, `cz`      |
+| Package manager | pnpm 11.15.1, Node.js 24                        |
+| Hosting         | GitHub Pages, deployed by GitHub Actions        |
 
-Pre účely zadania sme vytvorili 3 jednoduché API endpointy - GET zoznamu útulkov zapojených do projektu, GET pre hodnotu vyzbieranej sumy a počet darcov a POST na odoslanie obsahu formuláru. Dokumentáciu k nim nájdete na nasledovnom odkaze: https://frontend-assignment-api.goodrequest.dev/apidoc/
+## Quick start
 
-Grafické podklady pre zadanie nájdete na nasledovnom odkaze (registrácia do toolu Figma je zdarma): https://www.figma.com/design/fOYdJW8UqfZjT8o2WYigty/Frontend-Assignment-2.0
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm dev
+```
 
-Vizuálna kvalita spracovania aplikácie a štýlovanie je tiež predmetom hodnotenia. Plynulé a user friendly UI s peknými prechodmi a animáciami sú plusový bod. Môžete použiť Mantine, Antd alebo akúkoľvek inú UI knižnicu- výber nechávame na vás.
+Open <http://127.0.0.1:4173/>.
 
-**Kritériá na použité technológie:**
+## Documentation
 
-- Použiť Next.js
-- Použiť TypeScript
-- Na server state management použiť [TanStack Query](https://tanstack.com/query/latest)
-- Na client state management  (výber je na vás. Odporúčame context+reducer, zustand alebo iný)
-- Knižnica pre správu formuláru (Odporúčame [react-hook-form](https://www.react-hook-form.com/), formik)
-- Štruktúru projektu nechávame kompletne na vás, ale budeme ju hodnotiť. :)
+| Document                                                         | Contents                                                                 |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| [Local development](./docs/local-development.md)                 | Project layout, state ownership, how to run the suites.                  |
+| [Design decisions](./docs/design-decisions.md)                   | Why the architecture looks like this, and what was measured and refused. |
+| [API contract](./docs/api-contract.md)                           | The three supplied endpoints, response shapes, runtime error policy.     |
+| [Requirements traceability](./docs/requirements-traceability.md) | Each requirement mapped to the test that proves it.                      |
+| [Assignment brief](./docs/assignment-brief.md)                   | Verbatim source brief from GoodRequest. Authoritative on scope.          |
+| [ZADANIE.md](./ZADANIE.md)                                       | Interpreted requirements and acceptance criteria (Slovak).               |
+| [`docs/openapi.json`](./docs/openapi.json)                       | Verified API snapshot. Source for generated types.                       |
 
-*  Nice to have (nepovinné kritériá):
-    - Použiť lokalizačnú knižnicu na stringy (napr. i18next)
-    - Použiť styled-components
-    - Validácia formuláru pomocou [Zod](https://zod.dev/) schémy
-    - Myslieť na accessibility (https://www.goodrequest.com/sk/blog/pristupnost-webu-pre-vyvojarov)
-    
+## Deployment
 
-*  Ak vám ostane čas alebo chuť :):
+Pushes to `main` run the quality, browser and performance gates, then publish
+`out/` to GitHub Pages. The project URL lives under a subpath, so the production
+build needs the base path:
 
-      - Responzívne zobrazenie
-      - SEO (implementovať og:image a rôzne titles a descriptions na jednotlivých stepoch formuláru)
-      - umožniť pridať viacerých darcov- je na vás ako to bude vyzerať
+```bash
+NEXT_PUBLIC_BASE_PATH=/goodrequest-frontend-assignment pnpm build
+```
 
-# Assignement for Frontend developer - GoodRequest
+## What the application does
 
-The goal of the task is to create a simple application in Next.js that serves as a form for the GoodBoy Foundation to support Slovak shelters for dogs.
+Three steps, each its own route, each committing only validated data forward:
 
-**The application should allow potential supporters to:**
+1. **Selection** — foundation or a specific shelter, plus a preset or custom amount.
+2. **Details** — donor name, surname, e-mail and a Slovak or Czech phone number.
+3. **Review** — summary, mandatory privacy consent, submission.
 
-- choose the form of help- a general donation for the foundation or a donation for a specific shelter
-- select a specific shelter from a list of participating shelters (optional field for a general donation, mandatory field if donating to a specific shelter)
-- choose the amount of the donation, with the possibility to set a custom value (mandatory field)
-- fill in their personal details:
-    - name – optional field (2-20 characters)
-    - surname – mandatory field (2-30 characters)
-    - e-mail – valid format of the e-mail address
-    - phone – Slovak or Czech number with the country code +420 / +421, showing the selected country flag
-    - confirm consent for personal data processing (mandatory field)
-    - submit the validated form, or clearly notify the user of any errors
-- view the contact details of the organization on the Contact page
-- see the total amount raised and the number/list of donors (these data are regularly updated and accessible through the API endpoint described below)
+Plus a contact page, an about page showing the live contributed total and
+contributor count, a localized 404, and full keyboard and screen-reader support.
 
-For the purpose of this assignment, we have created 3 simple API endpoints: a GET for the list of shelters participating in the project, a GET for the total amount raised and the number of donors, and a POST for submitting the form content. You can find the documentation for these endpoints at the following link: https://frontend-assignment-api.goodrequest.dev/apidoc/
+## Project structure
 
-Design assets for the assignment can be found at the following link (registration to Figma tool is free): https://www.figma.com/design/fOYdJW8UqfZjT8o2WYigty/Frontend-Assignment-2.0
+```
+src/
+  app/            App Router routes; one segment per locale (sk at root, /en, /cz)
+  features/       Feature slices: selection, details, review, about, contact
+  components/     Shared UI (ui/) and layout chrome (layout/)
+  domain/         Framework-free donation types and rules
+  lib/            api/ (client, contracts, queries), validation/, navigation/, site.ts
+  i18n/           i18next instances, config and per-locale resources
+  styles/         Design tokens, global styles, contrast and drift guards
+  assets/         Brand logo, flags, optimized imagery
+e2e/              Playwright suites, run against the built out/ artifact in CI
+scripts/          Bundle-budget and Lighthouse gates, static server for both
+docs/             The reference documents linked above
+```
 
-The visual quality of the application and styling is also part of the evaluation. A smooth and user-friendly UI with nice transitions and animations will earn extra points. You may use Mantine, Antd, or any other UI library – the choice is up to you.
+Every module is co-located with its `*.test.ts(x)` and, where it has styles, its
+`*.styles.ts`.
 
-**Criteria for technologies to use:**
+## Scripts
 
-- Use Next.js
-- Use TypeScript
-- Use [TanStack Query](https://tanstack.com/query/latest) for server state management
-- Use a client state management solution (The choice is yours. We recommend context + reducer, zustand or other )
-- Use a library for form management (We recommend [react-hook-form](https://www.react-hook-form.com/), formik)
-- You are free to decide the project structure, but we will evaluate it. :)
+| Command              | What it does                                                                |
+| -------------------- | --------------------------------------------------------------------------- |
+| `pnpm dev`           | Dev server on <http://127.0.0.1:4173/>                                      |
+| `pnpm build`         | Static export to `out/`                                                     |
+| `pnpm check`         | format → lint → stylelint → typecheck → unit tests → build → bundle budgets |
+| `pnpm test`          | Vitest unit and integration suites                                          |
+| `pnpm test:watch`    | Vitest in watch mode                                                        |
+| `pnpm test:coverage` | Vitest with V8 coverage                                                     |
+| `pnpm test:e2e`      | Playwright (dev server locally, `out/` in CI)                               |
+| `pnpm lint`          | ESLint, zero warnings tolerated                                             |
+| `pnpm lint:styles`   | Stylelint over styled-components template literals                          |
+| `pnpm typecheck`     | `next typegen` then `tsc --noEmit`                                          |
+| `pnpm format:check`  | Prettier verification                                                       |
+| `pnpm bundle:check`  | Per-route gzip budgets against the frozen baseline                          |
+| `pnpm performance`   | Lighthouse matrix over `out/`                                               |
+| `pnpm deadcode`      | Knip unused files, exports and dependencies                                 |
+| `pnpm api:types`     | Regenerate API types from `docs/openapi.json`                               |
 
-* Nice to have (optional criteria):
+`pnpm bundle:check` and `pnpm performance` read `out/`; run `pnpm build` first.
 
-  - Use a localization library for strings (e.g., i18next)
-  - Use styled-components
-  - Form validation using a [Zod](https://zod.dev/) schema
-  - Consider accessibility (https://www.goodrequest.com/en/blog/web-accessibility-for-developers)
-    
+## Attribution
 
-* If you have some spare time :):
-  - Responsive design
-  - SEO (implement og:image and various titles and descriptions on different form steps)
-  - Allow adding multiple donors – it's up to you how this will look
+Assignment and design assets by [GoodRequest](https://www.goodrequest.com/).
+Figma source: [Frontend Assignment 2.0](https://www.figma.com/design/fOYdJW8UqfZjT8o2WYigty/Frontend-Assignment-2.0).
+API documentation: <https://frontend-assignment-api.goodrequest.dev/apidoc/>.
+
+Brand assets in this repository: the supplied logo export lives at
+`src/assets/brand/goodboy-logo.svg`, localized Open Graph images at
+`public/social/`, and the GitHub social preview at
+`.github/assets/goodboy-social-preview.png`. `public/og-image.png` mirrors the
+Slovak preview so previously shared links keep resolving.

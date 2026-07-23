@@ -1,10 +1,13 @@
 .worktrees/
+.tmp/
 .next/
 node_modules/
 out/
 coverage/
 playwright-report/
-test-results/
+test-results*/
+.playwright-cli/
 *.tsbuildinfo
 .env*.local
 .DS_Store
+PRIRUCKA.md

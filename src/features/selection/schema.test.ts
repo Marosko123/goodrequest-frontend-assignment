@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Shelter } from "@/domain/donation";
+import { createTranslator } from "@/i18n/instance";
 
 import { createSelectionSchema } from "./schema";
 
@@ -10,8 +11,10 @@ const shelters: Shelter[] = [
 ];
 
 describe("createSelectionSchema", () => {
+  const t = createTranslator("sk");
+
   it("removes a stale shelter from a foundation contribution", () => {
-    const result = createSelectionSchema(shelters).parse({
+    const result = createSelectionSchema(shelters, t).parse({
       target: "foundation",
       shelterId: "4",
       amount: "20",
@@ -21,7 +24,7 @@ describe("createSelectionSchema", () => {
   });
 
   it("requires and resolves an existing shelter for a targeted contribution", () => {
-    const schema = createSelectionSchema(shelters);
+    const schema = createSelectionSchema(shelters, t);
 
     expect(
       schema.safeParse({ target: "shelter", shelterId: "", amount: "20" })
@@ -36,8 +39,21 @@ describe("createSelectionSchema", () => {
     });
   });
 
+  it("reports a missing shelter and a missing amount in one pass", () => {
+    const result = createSelectionSchema(shelters, t).safeParse({
+      target: "shelter",
+      shelterId: "",
+      amount: "",
+    });
+
+    expect(result.success).toBe(false);
+    expect(
+      result.success ? [] : result.error.issues.map((issue) => issue.path[0]),
+    ).toEqual(expect.arrayContaining(["amount", "shelterId"]));
+  });
+
   it("rejects an invalid custom amount", () => {
-    const result = createSelectionSchema(shelters).safeParse({
+    const result = createSelectionSchema(shelters, t).safeParse({
       target: "foundation",
       shelterId: "",
       amount: "1e3",
@@ -45,4 +61,23 @@ describe("createSelectionSchema", () => {
 
     expect(result.success).toBe(false);
   });
+
+  it.each([
+    ["", "Enter a contribution amount."],
+    ["0", "The contribution amount must be greater than zero."],
+    ["10.555", "Use no more than two decimal places."],
+    ["999999.01", "The maximum contribution is 999,999 €."],
+    ["1000000", "The maximum contribution is 999,999 €."],
+    ["-151", "Use digits and at most one decimal separator."],
+  ])(
+    "explains the %s amount error in the requested locale",
+    (amount, message) => {
+      const result = createSelectionSchema(
+        shelters,
+        createTranslator("en"),
+      ).safeParse({ target: "foundation", shelterId: null, amount });
+
+      expect(result.error?.issues[0]?.message).toBe(message);
+    },
+  );
 });

@@ -1,29 +1,60 @@
-import { z } from "zod";
+import type { TFunction } from "i18next";
 
 import type { DonationSelection, Shelter } from "@/domain/donation";
+import { z } from "@/lib/validation/zod";
 
-import { parseAmountToCents } from "./amount";
+import { getAmountErrorMessage, parseDonationAmount } from "./amount";
 
-export const amountErrorMessage =
-  "Zadajte kladnú sumu najviac na dve desatinné miesta.";
-
-export function createSelectionSchema(shelters: readonly Shelter[]) {
-  return z
+export function createSelectionSchema(
+  shelters: readonly Shelter[],
+  t: TFunction,
+) {
+  const inputSchema = z
     .object({
       target: z.enum(["foundation", "shelter"]),
-      shelterId: z.string().nullable().optional(),
+      shelterId: z.optional(z.nullable(z.string())),
       amount: z.string(),
     })
-    .transform((values, context): DonationSelection => {
-      const amountCents = parseAmountToCents(values.amount);
-      if (amountCents === null) {
-        context.addIssue({
-          code: "custom",
-          message: amountErrorMessage,
-          path: ["amount"],
-        });
+    .check(
+      // Both fields are checked independently: an invalid amount must not hide a
+      // missing shelter, or the error summary would reveal the two errors across
+      // two submit attempts instead of listing them together.
+      z.superRefine((values, context) => {
+        const amountResult = parseDonationAmount(values.amount);
+        if (!amountResult.ok) {
+          context.addIssue({
+            code: "custom",
+            message: getAmountErrorMessage(amountResult.code, t),
+            path: ["amount"],
+          });
+        }
+
+        if (values.target === "foundation") {
+          return;
+        }
+
+        const shelterId = Number(values.shelterId);
+        const shelter = shelters.find(
+          (candidate) => candidate.id === shelterId,
+        );
+        if (!values.shelterId || !shelter) {
+          context.addIssue({
+            code: "custom",
+            message: t("selection.shelterError"),
+            path: ["shelterId"],
+          });
+        }
+      }),
+    );
+
+  return z.pipe(
+    inputSchema,
+    z.transform<z.output<typeof inputSchema>, DonationSelection>((values) => {
+      const amountResult = parseDonationAmount(values.amount);
+      if (!amountResult.ok) {
         return z.NEVER;
       }
+      const amountCents = amountResult.cents;
 
       if (values.target === "foundation") {
         return { target: "foundation", amountCents };
@@ -32,16 +63,12 @@ export function createSelectionSchema(shelters: readonly Shelter[]) {
       const shelterId = Number(values.shelterId);
       const shelter = shelters.find((candidate) => candidate.id === shelterId);
       if (!values.shelterId || !shelter) {
-        context.addIssue({
-          code: "custom",
-          message: "Vyberte útulok zo zoznamu.",
-          path: ["shelterId"],
-        });
         return z.NEVER;
       }
 
       return { target: "shelter", amountCents, shelter };
-    });
+    }),
+  );
 }
 
 export type SelectionFormValues = z.input<

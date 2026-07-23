@@ -1,18 +1,44 @@
+import { parsePhoneNumberFromString } from "libphonenumber-js/max";
 import { describe, expect, it } from "vitest";
 
-import type { DonationSelection, DonorDetails } from "./donation";
+import {
+  formatPhoneForDisplay,
+  type DonationSelection,
+  type DonorDetails,
+} from "./donation";
 import { mapContributionRequest } from "@/lib/api/mappers";
 
 const donor: DonorDetails = {
   firstName: "",
   lastName: "Nováková",
   email: "jana@example.sk",
-  phoneE164: null,
-  phoneCountry: null,
+  phoneE164: "+421901234567",
+  phoneCountry: "SK",
 };
 
+describe("formatPhoneForDisplay", () => {
+  // The review route drops libphonenumber to stay inside its bundle budget, so
+  // the shortcut is pinned against the library it replaces. If either country
+  // ever changed its national grouping, this fails instead of shipping silently.
+  it.each(["+421901234567", "+421911750750", "+420777123456", "+420601234567"])(
+    "matches libphonenumber formatInternational for %s",
+    (phoneE164) => {
+      expect(formatPhoneForDisplay(phoneE164)).toBe(
+        parsePhoneNumberFromString(phoneE164)?.formatInternational(),
+      );
+    },
+  );
+
+  it.each(["", "+49151234567", "+42190123456", "not a phone"])(
+    "returns %s untouched when it is outside the supported shape",
+    (value) => {
+      expect(formatPhoneForDisplay(value)).toBe(value);
+    },
+  );
+});
+
 describe("mapContributionRequest", () => {
-  it("omits shelter and optional phone for a foundation contribution", () => {
+  it("maps the required phone for a foundation contribution", () => {
     const selection: DonationSelection = {
       target: "foundation",
       amountCents: 1050,
@@ -24,6 +50,7 @@ describe("mapContributionRequest", () => {
           firstName: "",
           lastName: "Nováková",
           email: "jana@example.sk",
+          phone: "+421901234567",
         },
       ],
       value: 10.5,
@@ -58,14 +85,26 @@ describe("mapContributionRequest", () => {
     });
   });
 
-  it("rejects a non-positive or fractional cent amount", () => {
-    const invalidSelection: DonationSelection = {
+  it("maps the maximum supported contribution", () => {
+    const selection: DonationSelection = {
       target: "foundation",
-      amountCents: 10.5,
+      amountCents: 99_999_900,
     };
 
-    expect(() => mapContributionRequest(invalidSelection, donor)).toThrow(
-      "Contribution amount must use positive whole cents.",
-    );
+    expect(mapContributionRequest(selection, donor).value).toBe(999_999);
   });
+
+  it.each([0, -1, 10.5, 99_999_901])(
+    "rejects an out-of-contract amount of %s cents",
+    (amountCents) => {
+      const invalidSelection: DonationSelection = {
+        target: "foundation",
+        amountCents,
+      };
+
+      expect(() => mapContributionRequest(invalidSelection, donor)).toThrow(
+        "Contribution amount is outside the supported cent range.",
+      );
+    },
+  );
 });

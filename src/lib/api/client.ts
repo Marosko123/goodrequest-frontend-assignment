@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import type { ZodMiniType } from "@/lib/validation/zod";
 
 import type { DonationStats, Shelter } from "@/domain/donation";
 
@@ -10,6 +10,9 @@ import {
   type ContributionRequest,
   type ContributionResponse,
 } from "./contracts";
+import { ApiError } from "./errors";
+
+export { ApiError } from "./errors";
 
 const defaultApiBaseUrl = "https://frontend-assignment-api.goodrequest.dev";
 const apiBaseUrl = (
@@ -17,25 +20,11 @@ const apiBaseUrl = (
 ).replace(/\/$/, "");
 const requestTimeoutMs = 10_000;
 
-export type ApiErrorKind = "network" | "timeout" | "http" | "contract";
-
-export class ApiError extends Error {
-  readonly kind: ApiErrorKind;
-  readonly status: number | undefined;
-
-  constructor(kind: ApiErrorKind, message: string, status?: number) {
-    super(message);
-    this.name = "ApiError";
-    this.kind = kind;
-    this.status = status;
-  }
-}
-
-async function requestJson<Schema extends z.ZodType>(
+async function requestJson<Schema extends ZodMiniType>(
   path: string,
   schema: Schema,
   init?: RequestInit,
-): Promise<z.output<Schema>> {
+): Promise<Schema["_zod"]["output"]> {
   let response: Response;
 
   try {

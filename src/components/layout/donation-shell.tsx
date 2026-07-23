@@ -1,61 +1,88 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { preload } from "react-dom";
+import { useTranslation } from "react-i18next";
 
 import donationDogDesktop from "@/assets/donation-dog-desktop.webp";
+import donationDogDesktopAvif from "@/assets/donation-dog-desktop.avif";
 import donationDogMobile from "@/assets/donation-dog-mobile.webp";
+import donationDogMobileAvif from "@/assets/donation-dog-mobile.avif";
 
 import { AppFooter } from "./app-footer";
-import { Stepper } from "./stepper";
-import styles from "./donation-shell.module.scss";
+import { DonationProgress } from "./donation-progress";
+import { DonationProgressProvider } from "./donation-progress-context";
+import { mainContentId } from "./skip-link";
+import {
+  Content,
+  ContentColumn,
+  Header,
+  Media,
+  MediaImage,
+  Shell,
+} from "./donation-shell.styles";
 
-export function DonationShell({
-  children,
-  currentStep,
-}: {
-  children: ReactNode;
-  currentStep: 1 | 2 | 3;
-}) {
-  preload(donationDogMobile.src, {
+export function DonationShell({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
+  preload(donationDogMobileAvif.src, {
     as: "image",
     fetchPriority: "high",
-    media: "(max-width: 56rem)",
-    type: "image/webp",
+    media: "(width <= 56rem)",
+    type: "image/avif",
   });
-  preload(donationDogDesktop.src, {
+  preload(donationDogDesktopAvif.src, {
     as: "image",
     fetchPriority: "high",
-    media: "(min-width: 56.001rem)",
-    type: "image/webp",
+    media: "(width > 56rem)",
+    type: "image/avif",
   });
 
   return (
-    <div className={styles.shell}>
-      <div className={styles.contentColumn}>
-        <header className={styles.header}>
-          <Stepper currentStep={currentStep} />
-        </header>
-        <main className={styles.content}>{children}</main>
-        <AppFooter showSocials={currentStep === 1} />
-      </div>
-      <aside aria-label="Fotografia podporovaného psa" className={styles.media}>
-        <picture>
-          <source
-            media="(min-width: 56.001rem)"
-            srcSet={donationDogDesktop.src}
-            type="image/webp"
-          />
-          <img
-            alt="Mladý pes na pláži"
-            className={styles.image}
-            decoding="sync"
-            fetchPriority="high"
-            height={donationDogMobile.height}
-            loading="eager"
-            src={donationDogMobile.src}
-            width={donationDogMobile.width}
-          />
-        </picture>
-      </aside>
-    </div>
+    <DonationProgressProvider>
+      <Shell>
+        <ContentColumn>
+          <Header>
+            <DonationProgress />
+          </Header>
+          <Content id={mainContentId} tabIndex={-1}>
+            {children}
+          </Content>
+          <AppFooter />
+        </ContentColumn>
+        <Media aria-label={t("media.dogPanel")}>
+          <picture>
+            <source
+              media="(width > 56rem)"
+              srcSet={donationDogDesktopAvif.src}
+              type="image/avif"
+            />
+            <source
+              media="(width > 56rem)"
+              srcSet={donationDogDesktop.src}
+              type="image/webp"
+            />
+            <source
+              media="(width <= 56rem)"
+              srcSet={donationDogMobileAvif.src}
+              type="image/avif"
+            />
+            <MediaImage
+              alt={t("media.donationDog")}
+              decoding="sync"
+              draggable={false}
+              fetchPriority="high"
+              height={donationDogMobile.height}
+              loading="eager"
+              src={donationDogMobile.src}
+              style={{
+                "--media-blur-desktop": `url(${donationDogDesktop.blurDataURL})`,
+                "--media-blur-mobile": `url(${donationDogMobile.blurDataURL})`,
+              }}
+              width={donationDogMobile.width}
+            />
+          </picture>
+        </Media>
+      </Shell>
+    </DonationProgressProvider>
   );
 }

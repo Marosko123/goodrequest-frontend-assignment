@@ -1,29 +1,18 @@
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 
-import { DonationFlowProvider } from "@/features/donation-flow/context";
-
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        refetchOnWindowFocus: true,
-      },
-      mutations: {
-        retry: 0,
-      },
-    },
-  });
-}
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
+import { SkipLink } from "@/components/layout/skip-link";
+import { AppI18nProvider } from "@/i18n/provider";
 
 export function AppProviders({ children }: { children: ReactNode }) {
-  const [queryClient] = useState(createQueryClient);
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <DonationFlowProvider>{children}</DonationFlowProvider>
-    </QueryClientProvider>
+    <AppI18nProvider>
+      {/* First in DOM order so it is the first stop of a keyboard tab sequence. */}
+      <SkipLink />
+      <LanguageSwitcher />
+      {children}
+    </AppI18nProvider>
   );
 }

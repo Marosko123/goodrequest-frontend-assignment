@@ -1,18 +1,55 @@
 import type { DonationSelection, DonorDetails } from "@/domain/donation";
+import {
+  getLocaleFromPathname,
+  getLocalizedPath,
+  getUnlocalizedPath,
+} from "@/i18n/config";
+
+export type SelectionDraft = {
+  target: "foundation" | "shelter";
+  shelterId: string | null;
+  amount: string;
+};
+
+export type DonorDraft = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phoneDialCode: string;
+  phone: string;
+  phoneCountry: "SK" | "CZ";
+};
 
 export type DonationFlowState = {
   selection: DonationSelection | null;
   donor: DonorDetails | null;
+  selectionDraft: SelectionDraft | null;
+  donorDraft: DonorDraft | null;
+  submissionAccepted: boolean;
+  hydrated: boolean;
 };
 
+export type PersistedDonationFlowState = Pick<
+  DonationFlowState,
+  "selection" | "donor" | "selectionDraft" | "donorDraft"
+>;
+
 export type DonationFlowAction =
+  | { type: "selectionDraftChanged"; payload: SelectionDraft }
+  | { type: "donorDraftChanged"; payload: DonorDraft }
   | { type: "selectionCommitted"; payload: DonationSelection }
   | { type: "donorCommitted"; payload: DonorDetails }
+  | { type: "flowHydrated"; payload: PersistedDonationFlowState }
+  | { type: "submissionAccepted" }
   | { type: "flowReset" };
 
 export const initialDonationFlowState: DonationFlowState = {
   selection: null,
   donor: null,
+  selectionDraft: null,
+  donorDraft: null,
+  submissionAccepted: false,
+  hydrated: false,
 };
 
 export function donationFlowReducer(
@@ -20,32 +57,86 @@ export function donationFlowReducer(
   action: DonationFlowAction,
 ): DonationFlowState {
   switch (action.type) {
+    case "selectionDraftChanged":
+      return {
+        ...state,
+        selection: null,
+        donor: null,
+        selectionDraft: action.payload,
+        submissionAccepted: false,
+      };
+    case "donorDraftChanged":
+      return {
+        ...state,
+        donor: null,
+        donorDraft: action.payload,
+        submissionAccepted: false,
+      };
     case "selectionCommitted":
-      return { ...state, selection: action.payload };
+      return {
+        ...state,
+        selection: action.payload,
+        donor: null,
+        submissionAccepted: false,
+      };
     case "donorCommitted":
-      return { ...state, donor: action.payload };
+      return { ...state, donor: action.payload, submissionAccepted: false };
+    case "flowHydrated": {
+      const hasNewerInMemoryProgress =
+        state.selection !== null ||
+        state.donor !== null ||
+        state.selectionDraft !== null ||
+        state.donorDraft !== null ||
+        state.submissionAccepted;
+
+      if (hasNewerInMemoryProgress) {
+        return { ...state, hydrated: true };
+      }
+
+      return {
+        ...state,
+        ...action.payload,
+        submissionAccepted: false,
+        hydrated: true,
+      };
+    }
+    case "submissionAccepted":
+      return {
+        ...initialDonationFlowState,
+        hydrated: state.hydrated,
+        submissionAccepted: true,
+      };
     case "flowReset":
-      return initialDonationFlowState;
+      return { ...initialDonationFlowState, hydrated: state.hydrated };
   }
 }
 
 export function getFlowRedirect(
   pathname: string,
   state: DonationFlowState,
-): "/" | "/details" | null {
-  const normalizedPath = pathname.replace(/\/+$/, "") || "/";
+): string | null {
+  const locale = getLocaleFromPathname(pathname);
+  const normalizedPath =
+    getUnlocalizedPath(pathname).replace(/\/+$/, "") || "/";
 
   if (normalizedPath === "/details" && !state.selection) {
-    return "/";
+    return getLocalizedPath(locale, "/");
   }
 
   if (normalizedPath === "/review") {
+    if (state.submissionAccepted) {
+      return getLocalizedPath(locale, "/success/");
+    }
     if (!state.selection) {
-      return "/";
+      return getLocalizedPath(locale, "/");
     }
     if (!state.donor) {
-      return "/details";
+      return getLocalizedPath(locale, "/details/");
     }
+  }
+
+  if (normalizedPath === "/success" && !state.submissionAccepted) {
+    return getLocalizedPath(locale, "/");
   }
 
   return null;
