@@ -2,6 +2,10 @@ import { defineConfig, devices } from "@playwright/test";
 
 const testPort = process.env.PLAYWRIGHT_PORT ?? "4173";
 const baseURL = `http://127.0.0.1:${testPort}`;
+const deploymentBasePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(
+  /\/+$/u,
+  "",
+);
 
 /**
  * CI runs against the `out/` artifact that actually ships to Pages, so route
@@ -36,8 +40,11 @@ export default defineConfig({
   ],
   webServer: {
     command: webServerCommand,
-    env: { PLAYWRIGHT_PORT: testPort },
-    url: baseURL,
+    env: {
+      NEXT_PUBLIC_BASE_PATH: deploymentBasePath,
+      PLAYWRIGHT_PORT: testPort,
+    },
+    url: `${baseURL}${deploymentBasePath}/`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },

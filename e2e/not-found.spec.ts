@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+import { deployedPath } from "./helpers";
+
 const locales = [
   {
     path: "/stratena-stranka/",
@@ -35,7 +37,7 @@ test.describe("custom not-found page", () => {
     test(`renders the ${locale.lang} 404 with a localized route home`, async ({
       page,
     }) => {
-      const response = await page.goto(locale.path);
+      const response = await page.goto(deployedPath(locale.path));
 
       expect(response?.status()).toBe(404);
       await expect(page.locator("html")).toHaveAttribute("lang", locale.lang);
@@ -47,10 +49,10 @@ test.describe("custom not-found page", () => {
         page.locator(
           `header a[data-locale="${locale.lang === "cs" ? "cz" : locale.lang}"]`,
         ),
-      ).toHaveAttribute("href", locale.homeHref);
+      ).toHaveAttribute("href", deployedPath(locale.homeHref));
       await expect(
         page.getByRole("link", { name: locale.home }),
-      ).toHaveAttribute("href", locale.homeHref);
+      ).toHaveAttribute("href", deployedPath(locale.homeHref));
       await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
         "content",
         /noindex/u,
@@ -83,7 +85,7 @@ test.describe("custom not-found page", () => {
 
     for (const width of [280, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: width < 768 ? 844 : 1024 });
-      await page.goto("/stratena-stranka/");
+      await page.goto(deployedPath("/stratena-stranka/"));
 
       const layout = await page.evaluate(() => {
         const image = document
@@ -113,14 +115,18 @@ test.describe("custom not-found page", () => {
   test("switches the missing route without showing the wrong locale", async ({
     page,
   }) => {
-    await page.goto("/stratena-stranka/");
+    await page.goto(deployedPath("/stratena-stranka/"));
     await page.getByRole("combobox", { name: "Vybrať jazyk" }).click();
     await page.getByRole("option", { name: "Prepnúť do angličtiny" }).click();
 
     // The switcher emits a trailing slash, but the App Router drops it on a
     // route it cannot match against the route tree. Pages serves 404.html for
     // either form, so the locale below is the contract, not the exact spelling.
-    await expect(page).toHaveURL(/\/en\/stratena-stranka\/?$/u);
+    await expect(page).toHaveURL(
+      (url) =>
+        url.pathname.replace(/\/?$/u, "/") ===
+        deployedPath("/en/stratena-stranka/"),
+    );
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(
       page.getByRole("heading", {

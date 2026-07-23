@@ -17,8 +17,7 @@ import {
   StatsGrid,
 } from "./results-stats.styles";
 
-// Lets the stylesheet shrink oversized figures to the width of their column.
-// Both stats size off the longest one so the pair keeps a single type size.
+// Both stats follow the longest value to keep one type size.
 const statsStyle = (...values: string[]) =>
   ({
     "--stat-characters": Math.max(...values.map(({ length }) => length)),

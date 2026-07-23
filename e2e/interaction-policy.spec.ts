@@ -1,6 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { mockReadApi, reachDetails, settleLayout } from "./helpers";
+import {
+  deployedPath,
+  mockReadApi,
+  reachDetails,
+  settleLayout,
+} from "./helpers";
 
 const publicRoutes = [
   "/",
@@ -18,7 +23,7 @@ const publicRoutes = [
 ] as const;
 
 async function openInteractionReview(page: Page) {
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
   await page.evaluate(() => {
     sessionStorage.setItem(
       "goodboy-donation-flow:v1",
@@ -50,7 +55,7 @@ async function openInteractionReview(page: Page) {
       }),
     );
   });
-  await page.goto("/review/");
+  await page.goto(deployedPath("/review/"));
   await expect(
     page.getByRole("heading", { name: "Skontrolujte si zadané údaje" }),
   ).toBeVisible();
@@ -64,7 +69,7 @@ test("applies the shared media and selection policy across every locale", async 
   page,
 }) => {
   for (const path of publicRoutes) {
-    await page.goto(path);
+    await page.goto(deployedPath(path));
 
     const heading = page.locator("main h1:visible").first();
     await expect(heading).toHaveCSS("user-select", "auto");
@@ -92,7 +97,7 @@ test("applies the shared media and selection policy across every locale", async 
 test("prevents media drags and control selection while preserving content and inputs", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
 
   const photo = page.locator("aside img");
   const photoBox = await photo.boundingBox();
@@ -174,7 +179,7 @@ test("keeps hover desktop-only and avoids sticky hover on touch", async ({
   browser,
   page,
 }) => {
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
   expect(
     await page.evaluate(
       () => matchMedia("(hover: hover) and (pointer: fine)").matches,
@@ -203,7 +208,7 @@ test("keeps hover desktop-only and avoids sticky hover on touch", async ({
   });
   const touchPage = await touchContext.newPage();
   await mockReadApi(touchPage);
-  await touchPage.goto("/contact/");
+  await touchPage.goto(deployedPath("/contact/"));
   expect(
     await touchPage.evaluate(
       () => matchMedia("(hover: hover) and (pointer: fine)").matches,

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { mockReadApi, reachReview } from "./helpers";
+import { deployedPath, mockReadApi, reachReview } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await mockReadApi(page);
@@ -10,7 +10,7 @@ test("social links stay visible across donation and content pages", async ({
   page,
 }) => {
   for (const root of ["/", "/en/", "/cz/"]) {
-    await page.goto(root);
+    await page.goto(deployedPath(root));
     await expect(page.getByRole("link", { name: "Facebook" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Instagram" })).toBeVisible();
   }
@@ -27,7 +27,7 @@ test("social links stay visible across donation and content pages", async ({
     "/cz/contact/",
     "/cz/about/",
   ]) {
-    await page.goto(path);
+    await page.goto(deployedPath(path));
     await expect(page.getByRole("link", { name: "Facebook" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Instagram" })).toBeVisible();
   }
@@ -36,7 +36,7 @@ test("social links stay visible across donation and content pages", async ({
 test("social links are keyboard reachable with a visible focus ring", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
 
   const instagram = page.getByRole("link", { name: "Instagram" });
   await page.getByRole("link", { name: "Facebook" }).focus();
@@ -62,7 +62,7 @@ test("mobile touch targets stay large and reduced motion stays stationary", asyn
   });
   const page = await context.newPage();
   await mockReadApi(page);
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
 
   const facebook = page.getByRole("link", { name: "Facebook" });
 

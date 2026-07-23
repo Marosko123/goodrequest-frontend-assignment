@@ -30,7 +30,7 @@ export const Content = styled.div`
 export const StatsGrid = styled.dl`
   ${statsLayout}
 
-  /* Overridden inline with the real figure length; 1 means "never shrink". */
+  /* The real figure length overrides this without shrinking normal values. */
   --stat-characters: 1;
 
   margin: 0;
@@ -45,15 +45,7 @@ export const StatsGrid = styled.dl`
   }
 
   dd {
-    /*
-     * The live total runs to 12+ digits and formats as one unbreakable token
-     * (nbsp before €, no break after a group separator), so left alone it
-     * walks straight off the page. Shrink only the figures that cannot fit
-     * their own column: 0.52em is the average glyph advance of the heading
-     * face, so retune it if the type changes. overflow-wrap catches whatever
-     * the estimate still misses, and 1.2 is the line height both heading
-     * tokens already ship at their full size.
-     */
+    /* Fit long unbreakable totals to their own container. */
     --stat-fit: calc(100cqi / var(--stat-characters) / 0.52);
 
     margin: 0;

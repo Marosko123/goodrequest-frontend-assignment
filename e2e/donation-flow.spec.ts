@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  deployedPath,
   mockReadApi,
   reachDetails,
   reachReview,
@@ -14,7 +15,7 @@ test.beforeEach(async ({ page }) => {
 test("amount input rejects semantic changes and remains fully visible", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
   const amount = page.getByRole("textbox", { name: "Vlastná suma" });
 
   await amount.fill("-151");
@@ -98,7 +99,7 @@ test("amount input rejects semantic changes and remains fully visible", async ({
 test("keeps the donation shell mounted while the form step changes", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
   const media = page.locator(
     'aside[aria-label="Fotografia podporovaného psa"]',
   );
@@ -108,7 +109,7 @@ test("keeps the donation shell mounted while the form step changes", async ({
 
   await page.getByRole("button", { name: "50 €" }).click();
   await page.getByRole("button", { name: "Pokračovať" }).click();
-  await page.waitForURL("**/details/");
+  await page.waitForURL(`**${deployedPath("/details/")}`);
 
   await expect(page.locator('[data-shell-sentinel="mounted"]')).toHaveCount(1);
   const progress = page.getByRole("navigation", {
@@ -119,7 +120,7 @@ test("keeps the donation shell mounted while the form step changes", async ({
   ).toHaveAttribute("aria-current", "step");
 
   await page.getByRole("button", { name: "Späť" }).click();
-  await page.waitForURL((url) => url.pathname === "/");
+  await page.waitForURL((url) => url.pathname === deployedPath("/"));
   await expect(page.locator('[data-shell-sentinel="mounted"]')).toHaveCount(1);
   await expect(
     progress.getByRole("listitem").filter({ hasText: "Výber útulku" }),
@@ -134,14 +135,14 @@ test("completed step links support keyboard return and preserve invalidated draf
     name: "Priebeh príspevku",
   });
   const detailsStep = progress.getByRole("link", { name: "Osobné údaje" });
-  await expect(detailsStep).toHaveAttribute("href", "/details/");
+  await expect(detailsStep).toHaveAttribute("href", deployedPath("/details/"));
   await page.getByRole("combobox", { name: "Vybrať jazyk" }).focus();
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
   await expect(detailsStep).toBeFocused();
   await expect(detailsStep).toHaveCSS("outline-style", "solid");
   await page.keyboard.press("Enter");
-  await page.waitForURL("**/details/");
+  await page.waitForURL(`**${deployedPath("/details/")}`);
 
   const lastName = page.getByRole("textbox", { name: "Priezvisko" });
   await expect(lastName).toHaveValue("Nováková");
@@ -150,7 +151,7 @@ test("completed step links support keyboard return and preserve invalidated draf
   ).toHaveValue("jana@example.sk");
   await lastName.fill("Hraničná-Zmena");
   await page.goBack();
-  await page.waitForURL("**/details/");
+  await page.waitForURL(`**${deployedPath("/details/")}`);
 
   await expect(lastName).toHaveValue("Hraničná-Zmena");
   await expect(
@@ -158,22 +159,22 @@ test("completed step links support keyboard return and preserve invalidated draf
   ).toHaveCount(0);
 
   await page.getByRole("button", { name: "Pokračovať" }).click();
-  await page.waitForURL("**/review/");
+  await page.waitForURL(`**${deployedPath("/review/")}`);
   await expect(page.getByText("Jana Hraničná-Zmena")).toBeVisible();
 
   const selectionStep = progress.getByRole("link", {
     name: "Výber útulku",
   });
-  await expect(selectionStep).toHaveAttribute("href", "/");
+  await expect(selectionStep).toHaveAttribute("href", deployedPath("/"));
   await selectionStep.click();
-  await page.waitForURL((url) => url.pathname === "/");
+  await page.waitForURL((url) => url.pathname === deployedPath("/"));
   await expect(page.getByRole("textbox", { name: "Vlastná suma" })).toHaveValue(
     "50",
   );
 
   await page.getByRole("button", { name: "20 €" }).click();
   await page.getByRole("button", { name: "Pokračovať" }).click();
-  await page.waitForURL("**/details/");
+  await page.waitForURL(`**${deployedPath("/details/")}`);
   await expect(lastName).toHaveValue("Hraničná-Zmena");
   await expect(
     page.getByRole("textbox", { name: "E-mailová adresa" }),
@@ -241,7 +242,7 @@ test("submission progress locks step links and success finishes every step", asy
   await expect(page.getByRole("button", { name: "Späť" })).toBeDisabled();
 
   releaseSubmission?.();
-  await page.waitForURL("**/success/");
+  await page.waitForURL(`**${deployedPath("/success/")}`);
   await expect(progress).not.toHaveAttribute("aria-busy");
   await expect(progress.locator('li[data-status="finished"]')).toHaveCount(3);
   await expect(progress.getByRole("link")).toHaveCount(0);
@@ -281,7 +282,7 @@ test("offline recovery is visible and never submits automatically", async ({
   expect(submitCount).toBe(0);
 
   await page.getByRole("button", { name: "Skúsiť znova" }).click();
-  await page.waitForURL("**/success/");
+  await page.waitForURL(`**${deployedPath("/success/")}`);
   expect(submitCount).toBe(1);
 });
 
@@ -301,7 +302,7 @@ test("success layout centers its celebration across desktop and mobile", async (
   await reachReview(page);
   await page.getByRole("checkbox", { name: /súhlasím/i }).check();
   await page.getByRole("button", { name: "Odoslať formulár" }).click();
-  await page.waitForURL("**/success/");
+  await page.waitForURL(`**${deployedPath("/success/")}`);
 
   const content = page.locator('[data-ui="success-content"]');
   const celebration = page.locator('[data-ui="success-celebration"]');
@@ -466,7 +467,7 @@ test("reduced motion keeps the complete flow settled and focus-safe", async ({
     page.getByRole("status", { name: "Čakáme na potvrdenie" }),
   ).toBeVisible();
   releaseSubmission?.();
-  await page.waitForURL("**/success/");
+  await page.waitForURL(`**${deployedPath("/success/")}`);
   await expect(page.getByRole("heading", { name: /ďakujeme/i })).toBeVisible();
   await expect(page.locator('[data-icon="success-check"]')).toHaveCSS(
     "animation-name",
@@ -527,7 +528,7 @@ test("foundation contribution is normalized and submitted once", async ({
       );
     });
 
-  await page.waitForURL("**/success/");
+  await page.waitForURL(`**${deployedPath("/success/")}`);
   await expect(page.getByRole("heading", { name: /ďakujeme/i })).toBeVisible();
   expect(submitCount).toBe(1);
   expect(submittedBody).toEqual({
@@ -542,8 +543,8 @@ test("foundation contribution is normalized and submitted once", async ({
     value: 50,
   });
 
-  await page.goto("/review/");
-  await page.waitForURL("**/");
+  await page.goto(deployedPath("/review/"));
+  await page.waitForURL((url) => url.pathname === deployedPath("/"));
 });
 
 test("phone dial code is editable across both keyboard boundaries", async ({
@@ -560,13 +561,13 @@ test("phone dial code is editable across both keyboard boundaries", async ({
     });
   });
 
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
   await waitForDonationFlowHydration(page);
   await page.getByRole("button", { name: "50 €" }).focus();
   await page.keyboard.press("Enter");
   await page.getByRole("button", { name: "Pokračovať" }).focus();
   await page.keyboard.press("Enter");
-  await page.waitForURL("**/details/");
+  await page.waitForURL(`**${deployedPath("/details/")}`);
 
   await page.getByRole("textbox", { name: "Meno" }).focus();
   await page.keyboard.type("Jana");
@@ -604,7 +605,7 @@ test("phone dial code is editable across both keyboard boundaries", async ({
   await page.keyboard.press("Tab");
   await page.keyboard.press("Tab");
   await page.keyboard.press("Enter");
-  await page.waitForURL("**/review/");
+  await page.waitForURL(`**${deployedPath("/review/")}`);
 
   await page.getByRole("checkbox", { name: /súhlasím/i }).focus();
   await page.keyboard.press("Space");
@@ -612,7 +613,7 @@ test("phone dial code is editable across both keyboard boundaries", async ({
   await page.keyboard.press("Tab");
   await page.keyboard.press("Enter");
 
-  await page.waitForURL("**/success/");
+  await page.waitForURL(`**${deployedPath("/success/")}`);
   expect(submittedBody).toEqual({
     contributors: [
       {
@@ -652,10 +653,10 @@ test("an accepted contribution refreshes previously cached results", async ({
     });
   });
 
-  await page.goto("/about/");
+  await page.goto(deployedPath("/about/"));
   await expect(page.getByText("12 200 €")).toBeVisible();
   await page.getByRole("link", { name: "Späť" }).click();
-  await page.waitForURL((url) => url.pathname === "/");
+  await page.waitForURL((url) => url.pathname === deployedPath("/"));
 
   await page.getByRole("button", { name: "50 €" }).click();
   await page.getByRole("button", { name: "Pokračovať" }).click();
@@ -673,9 +674,9 @@ test("an accepted contribution refreshes previously cached results", async ({
     .getByRole("button", { name: /odoslať (?:príspevok|formulár)/i })
     .click();
 
-  await page.waitForURL("**/success/");
+  await page.waitForURL(`**${deployedPath("/success/")}`);
   await page.getByRole("link", { name: "O projekte" }).click();
-  await page.waitForURL("**/about/");
+  await page.waitForURL(`**${deployedPath("/about/")}`);
   await expect(page.getByText("12 250 €")).toBeVisible();
   await expect(page.getByText("1 029")).toBeVisible();
   expect(resultsRequests).toBe(2);
@@ -684,7 +685,7 @@ test("an accepted contribution refreshes previously cached results", async ({
 test("shelter selection remains consistent through review", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
   await waitForDonationFlowHydration(page);
   await page
     .getByRole("radio", { name: "Prispieť konkrétnemu útulku" })
@@ -766,6 +767,6 @@ test("validation and ambiguous network failure preserve user control", async ({
   expect(submitCount).toBe(1);
 
   await resend.click();
-  await page.waitForURL("**/success/");
+  await page.waitForURL(`**${deployedPath("/success/")}`);
   expect(submitCount).toBe(2);
 });

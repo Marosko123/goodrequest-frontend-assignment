@@ -2,6 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import {
+  deployedPath,
   mockReadApi,
   reachDetails,
   reachReview,
@@ -184,7 +185,7 @@ test("mobile donation shell starts at the top and fills a tall viewport", async 
     expect(dimensions.scrollWidth).toBe(dimensions.clientWidth);
   };
 
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
   await expectTallMobileShell();
 
   await reachDetails(page);
@@ -195,7 +196,7 @@ test("mobile donation shell starts at the top and fills a tall viewport", async 
 
   await page.getByRole("checkbox", { name: /súhlasím/i }).check();
   await page.getByRole("button", { name: "Odoslať formulár" }).click();
-  await page.waitForURL("**/success/");
+  await page.waitForURL(`**${deployedPath("/success/")}`);
   await expectTallMobileShell();
 });
 
@@ -221,6 +222,28 @@ test("a field error leaves the field beside it the same size", async ({
   expect(boxes[1]).toEqual(boxes[0]);
 });
 
+test("the language switcher stays aligned with the centered media column", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await page.goto(deployedPath("/"));
+
+  const rightGap = await page.evaluate(() => {
+    const media = document.querySelector("aside");
+    const switcher = document.querySelector('nav[aria-label="Jazyk stránky"]');
+    if (!media || !switcher) {
+      throw new Error("Donation media or language switcher is missing.");
+    }
+
+    return (
+      media.getBoundingClientRect().right -
+      switcher.getBoundingClientRect().right
+    );
+  });
+
+  expect(rightGap).toBeCloseTo(16, 0);
+});
+
 test("all assignment screens reflow at the target widths", async ({ page }) => {
   test.setTimeout(60_000);
 
@@ -240,7 +263,7 @@ test("all assignment screens reflow at the target widths", async ({ page }) => {
     const viewportLabel = `${width}×${height}px`;
     await page.setViewportSize(viewport);
 
-    await page.goto("/");
+    await page.goto(deployedPath("/"));
     await expectNoHorizontalOverflow(page, `selection at ${viewportLabel}`);
     await expectResponsiveStepper(page, width);
     if (width === 320) {
@@ -262,7 +285,7 @@ test("all assignment screens reflow at the target widths", async ({ page }) => {
     await expectResponsiveStepper(page, width);
 
     for (const path of ["/contact/", "/about/"]) {
-      await page.goto(path);
+      await page.goto(deployedPath(path));
       await expectNoHorizontalOverflow(page, `${path} at ${viewportLabel}`);
     }
   }
@@ -273,7 +296,7 @@ test("long English content reflows on narrow screens and at a 200% zoom equivale
 }) => {
   for (const width of [280, 320, 390, 480, 699]) {
     await page.setViewportSize({ width, height: 1024 });
-    await page.goto("/en/");
+    await page.goto(deployedPath("/en/"));
     await waitForDonationFlowHydration(page);
     await expectResponsiveStepper(page, width);
     await page
@@ -291,7 +314,7 @@ test("long English content reflows on narrow screens and at a 200% zoom equivale
     await expectNoHorizontalOverflow(page, `English selection at ${width}px`);
 
     await page.getByRole("button", { name: "Continue" }).click();
-    await page.waitForURL("**/en/details/");
+    await page.waitForURL(`**${deployedPath("/en/details/")}`);
     await expectResponsiveStepper(page, width);
     await page.getByRole("textbox", { name: "First name" }).fill("Mária-Lujza");
     await page
@@ -309,7 +332,7 @@ test("long English content reflows on narrow screens and at a 200% zoom equivale
     await expectNoHorizontalOverflow(page, `English details at ${width}px`);
 
     await page.getByRole("button", { name: "Continue" }).click();
-    await page.waitForURL("**/en/review/");
+    await page.waitForURL(`**${deployedPath("/en/review/")}`);
     await expectNoHorizontalOverflow(page, `English review at ${width}px`);
     await expectResponsiveStepper(page, width);
   }
@@ -319,7 +342,7 @@ test("custom dropdowns stay visible and interactive on a phone viewport", async 
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 800 });
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
   await waitForDonationFlowHydration(page);
   await page
     .getByRole("radio", { name: "Prispieť konkrétnemu útulku" })
@@ -334,7 +357,7 @@ test("custom dropdowns stay visible and interactive on a phone viewport", async 
   await page.getByRole("option", { name: "Žilinský útulok" }).click();
   await page.getByRole("button", { name: "20 €" }).click();
   await page.getByRole("button", { name: "Pokračovať" }).click();
-  await page.waitForURL("**/details/");
+  await page.waitForURL(`**${deployedPath("/details/")}`);
 
   const country = page.getByRole("combobox", {
     name: "Krajina telefónneho čísla",
@@ -355,7 +378,7 @@ test("Czech step names stay complete at both sides of the mobile breakpoint", as
 }) => {
   for (const width of [390, 480, 699]) {
     await page.setViewportSize({ width, height: 1024 });
-    await page.goto("/cz/");
+    await page.goto(deployedPath("/cz/"));
     await expectResponsiveStepper(page, width);
     await expectNoHorizontalOverflow(page, `Czech stepper at ${width}px`);
   }
