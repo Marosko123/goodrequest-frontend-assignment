@@ -199,6 +199,28 @@ test("mobile donation shell starts at the top and fills a tall viewport", async 
   await expectTallMobileShell();
 });
 
+test("a field error leaves the field beside it the same size", async ({
+  page,
+}) => {
+  await reachDetails(page);
+  await page.locator("#first-name").fill("r");
+  await page.locator("#last-name").fill("rg");
+  await page.getByRole("button", { name: "Pokračovať" }).click();
+  await expect(page.locator("#first-name-error")).toBeVisible();
+
+  const boxes = await page
+    .locator("#first-name, #last-name")
+    .evaluateAll((inputs) =>
+      inputs.map((input) => {
+        const { height, top } = input.getBoundingClientRect();
+        return { height: Math.round(height), top: Math.round(top) };
+      }),
+    );
+
+  expect(boxes).toHaveLength(2);
+  expect(boxes[1]).toEqual(boxes[0]);
+});
+
 test("all assignment screens reflow at the target widths", async ({ page }) => {
   test.setTimeout(60_000);
 

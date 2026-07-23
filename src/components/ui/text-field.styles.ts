@@ -5,6 +5,14 @@ import { theme } from "@/styles/theme";
 
 export const Field = styled.div`
   display: grid;
+
+  /*
+   * A field sat next to one showing an error is stretched to the taller row,
+   * and auto rows stretch with it — which silently inflates the untouched
+   * label and input. Pin the rows to their own height and let the slack fall
+   * to the bottom of the field instead.
+   */
+  align-content: start;
   gap: ${theme.space[1]};
   min-width: 0;
 `;
