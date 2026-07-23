@@ -329,9 +329,6 @@ describe("SelectionForm", () => {
     const amount = screen.getByRole("textbox", { name: "Vlastná suma" });
     expect(amount).toHaveFocus();
     expect(amount).toHaveAccessibleDescription("Zadajte sumu príspevku.");
-    expect(
-      screen.getByRole("alert", { name: "Formulár obsahuje chyby" }),
-    ).toBeInTheDocument();
 
     await act(() => i18next.changeLanguage("en"));
     expect(amount).toHaveAccessibleDescription("Enter a contribution amount.");

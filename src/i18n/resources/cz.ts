@@ -8,7 +8,6 @@ export const cz = {
     retry: "Zkusit znovu",
     contact: "Kontakt",
     about: "O projektu",
-    formErrors: "Formulář obsahuje chyby",
     skipToContent: "Přeskočit na hlavní obsah",
   },
   language: {

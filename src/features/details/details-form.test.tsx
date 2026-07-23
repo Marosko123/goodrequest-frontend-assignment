@@ -359,9 +359,6 @@ describe("DetailsForm", () => {
     await user.click(screen.getByRole("button", { name: "Pokračovať" }));
 
     expect(screen.getByRole("textbox", { name: "Priezvisko" })).toHaveFocus();
-    expect(
-      screen.getByRole("alert", { name: "Formulár obsahuje chyby" }),
-    ).toBeInTheDocument();
   });
 
   it("blocks implausible personal details and accepts them after correction", async () => {
@@ -384,9 +381,6 @@ describe("DetailsForm", () => {
     expect(lastName).toHaveFocus();
     expect(lastName).toHaveAttribute("aria-invalid", "true");
     expect(email).toHaveAttribute("aria-invalid", "true");
-    expect(
-      screen.getByRole("alert", { name: "Formulár obsahuje chyby" }),
-    ).toBeInTheDocument();
 
     await user.clear(lastName);
     await user.type(lastName, "Nováková");

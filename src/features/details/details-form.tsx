@@ -10,10 +10,6 @@ import { useDonationStepStatus } from "@/components/layout/donation-progress-con
 import { Button } from "@/components/ui/button";
 import { Dropdown, type DropdownOption } from "@/components/ui/dropdown";
 import {
-  FormErrorSummary,
-  type FormErrorItem,
-} from "@/components/ui/form-error-summary";
-import {
   ArrowLeftIcon,
   ArrowRightIcon,
   CountryFlag,
@@ -144,18 +140,6 @@ export function DetailsForm({
   const phoneDialCodeRegistration = register("phoneDialCode");
   const phoneRegistration = register("phone");
   const phoneError = errors.phoneDialCode?.message ?? errors.phone?.message;
-  const errorItems: FormErrorItem[] = [
-    ["first-name", t("details.firstName"), errors.firstName?.message],
-    ["last-name", t("details.lastName"), errors.lastName?.message],
-    ["email", t("details.email"), errors.email?.message],
-    [
-      errors.phoneDialCode ? "phone-dial-code" : "phone",
-      t("details.phone"),
-      phoneError,
-    ],
-  ]
-    .filter((item): item is [string, string, string] => Boolean(item[2]))
-    .map(([fieldId, label, message]) => ({ fieldId, label, message }));
 
   useEffect(() => {
     if (!onDraftChange) {
@@ -168,7 +152,7 @@ export function DetailsForm({
     });
   }, [onDraftChange, subscribe]);
 
-  const hasErrors = errorItems.length > 0;
+  const hasErrors = Object.keys(errors).length > 0;
   useDonationStepStatus(2, hasErrors ? "error" : "current");
 
   useEffect(() => {
@@ -354,8 +338,6 @@ export function DetailsForm({
           </ErrorMessage>
         ) : null}
       </PhoneField>
-
-      {isSubmitted ? <FormErrorSummary errors={errorItems} /> : null}
 
       <Actions>
         <Button

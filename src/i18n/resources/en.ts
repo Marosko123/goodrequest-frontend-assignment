@@ -8,7 +8,6 @@ export const en = {
     retry: "Try again",
     contact: "Contact",
     about: "About the project",
-    formErrors: "The form contains errors",
     skipToContent: "Skip to main content",
   },
   language: {
