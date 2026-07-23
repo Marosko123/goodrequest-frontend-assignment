@@ -1,5 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["scripts/serve-out.mjs"],
   "ignore": ["src/lib/api/generated.ts"],
   "ignoreExportsUsedInFile": true
 }
