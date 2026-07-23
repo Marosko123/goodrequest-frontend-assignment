@@ -13,10 +13,10 @@ export function FlowGuard({ children }: { children: ReactNode }) {
   const redirect = getFlowRedirect(pathname, state);
 
   useEffect(() => {
-    if (redirect) {
+    if (state.hydrated && redirect) {
       router.replace(redirect, { scroll: false });
     }
-  }, [redirect, router]);
+  }, [redirect, router, state.hydrated]);
 
-  return redirect ? null : children;
+  return state.hydrated && redirect ? null : children;
 }

@@ -1,5 +1,9 @@
 import type { DonationSelection, DonorDetails } from "@/domain/donation";
-import { getLocaleFromPathname, getLocalizedPath } from "@/i18n/config";
+import {
+  getLocaleFromPathname,
+  getLocalizedPath,
+  getUnlocalizedPath,
+} from "@/i18n/config";
 
 export type SelectionDraft = {
   target: "foundation" | "shelter";
@@ -11,6 +15,7 @@ export type DonorDraft = {
   firstName: string;
   lastName: string;
   email: string;
+  phoneDialCode: string;
   phone: string;
   phoneCountry: "SK" | "CZ";
 };
@@ -21,13 +26,20 @@ export type DonationFlowState = {
   selectionDraft: SelectionDraft | null;
   donorDraft: DonorDraft | null;
   submissionAccepted: boolean;
+  hydrated: boolean;
 };
+
+export type PersistedDonationFlowState = Pick<
+  DonationFlowState,
+  "selection" | "donor" | "selectionDraft" | "donorDraft"
+>;
 
 export type DonationFlowAction =
   | { type: "selectionDraftChanged"; payload: SelectionDraft }
   | { type: "donorDraftChanged"; payload: DonorDraft }
   | { type: "selectionCommitted"; payload: DonationSelection }
   | { type: "donorCommitted"; payload: DonorDetails }
+  | { type: "flowHydrated"; payload: PersistedDonationFlowState }
   | { type: "submissionAccepted" }
   | { type: "flowReset" };
 
@@ -37,6 +49,7 @@ export const initialDonationFlowState: DonationFlowState = {
   selectionDraft: null,
   donorDraft: null,
   submissionAccepted: false,
+  hydrated: false,
 };
 
 export function donationFlowReducer(
@@ -68,13 +81,33 @@ export function donationFlowReducer(
       };
     case "donorCommitted":
       return { ...state, donor: action.payload, submissionAccepted: false };
+    case "flowHydrated": {
+      const hasNewerInMemoryProgress =
+        state.selection !== null ||
+        state.donor !== null ||
+        state.selectionDraft !== null ||
+        state.donorDraft !== null ||
+        state.submissionAccepted;
+
+      if (hasNewerInMemoryProgress) {
+        return { ...state, hydrated: true };
+      }
+
+      return {
+        ...state,
+        ...action.payload,
+        submissionAccepted: false,
+        hydrated: true,
+      };
+    }
     case "submissionAccepted":
       return {
         ...initialDonationFlowState,
+        hydrated: state.hydrated,
         submissionAccepted: true,
       };
     case "flowReset":
-      return initialDonationFlowState;
+      return { ...initialDonationFlowState, hydrated: state.hydrated };
   }
 }
 
@@ -84,7 +117,7 @@ export function getFlowRedirect(
 ): string | null {
   const locale = getLocaleFromPathname(pathname);
   const normalizedPath =
-    pathname.replace(/^\/en(?=\/|$)/u, "").replace(/\/+$/, "") || "/";
+    getUnlocalizedPath(pathname).replace(/\/+$/, "") || "/";
 
   if (normalizedPath === "/details" && !state.selection) {
     return getLocalizedPath(locale, "/");

@@ -59,6 +59,7 @@ describe("donationFlowReducer", () => {
         firstName: "Jana",
         lastName: "Nováková",
         email: "jana@example.sk",
+        phoneDialCode: "421",
         phone: "901 234 567",
         phoneCountry: "SK" as const,
       },
@@ -125,6 +126,35 @@ describe("donationFlowReducer", () => {
       ),
     ).toEqual(initialDonationFlowState);
   });
+
+  it("keeps the provider hydrated after restoring, resetting, and submitting", () => {
+    const restored = donationFlowReducer(initialDonationFlowState, {
+      type: "flowHydrated",
+      payload: { selection, donor, selectionDraft: null, donorDraft: null },
+    });
+
+    expect(restored.hydrated).toBe(true);
+    expect(donationFlowReducer(restored, { type: "flowReset" }).hydrated).toBe(
+      true,
+    );
+    expect(
+      donationFlowReducer(restored, { type: "submissionAccepted" }).hydrated,
+    ).toBe(true);
+  });
+
+  it("does not overwrite newer in-memory progress during hydration", () => {
+    const accepted = {
+      ...initialDonationFlowState,
+      submissionAccepted: true,
+    };
+
+    expect(
+      donationFlowReducer(accepted, {
+        type: "flowHydrated",
+        payload: { selection, donor, selectionDraft: null, donorDraft: null },
+      }),
+    ).toEqual({ ...accepted, hydrated: true });
+  });
 });
 
 describe("getFlowRedirect", () => {
@@ -132,6 +162,9 @@ describe("getFlowRedirect", () => {
     expect(getFlowRedirect("/details", initialDonationFlowState)).toBe("/");
     expect(getFlowRedirect("/en/details/", initialDonationFlowState)).toBe(
       "/en/",
+    );
+    expect(getFlowRedirect("/cz/details/", initialDonationFlowState)).toBe(
+      "/cz/",
     );
   });
 
@@ -143,6 +176,12 @@ describe("getFlowRedirect", () => {
         selection,
       }),
     ).toBe("/en/details/");
+    expect(
+      getFlowRedirect("/cz/review", {
+        ...initialDonationFlowState,
+        selection,
+      }),
+    ).toBe("/cz/details/");
   });
 
   it("allows review only with both committed steps", () => {
@@ -164,10 +203,13 @@ describe("getFlowRedirect", () => {
     ).toBe("/en/success/");
   });
 
-  it("guards direct and refreshed success links in both locales", () => {
+  it("guards direct and refreshed success links in every locale", () => {
     expect(getFlowRedirect("/success", initialDonationFlowState)).toBe("/");
     expect(getFlowRedirect("/en/success/", initialDonationFlowState)).toBe(
       "/en/",
+    );
+    expect(getFlowRedirect("/cz/success/", initialDonationFlowState)).toBe(
+      "/cz/",
     );
     expect(
       getFlowRedirect("/success", {
