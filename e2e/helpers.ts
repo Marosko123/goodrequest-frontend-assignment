@@ -4,6 +4,22 @@ import { getLocalizedPath, type AppLocale } from "@/i18n/config";
 import { createTranslator } from "@/i18n/instance";
 
 const apiPattern = "**/api/v1/shelters/**";
+const deploymentBasePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(
+  /\/+$/u,
+  "",
+);
+
+export const isExportTarget =
+  (process.env.PLAYWRIGHT_TARGET ?? (process.env.CI ? "export" : "dev")) ===
+  "export";
+
+export function deployedPath(path: string): string {
+  if (!path.startsWith("/")) {
+    throw new Error(`Expected an absolute application path, received ${path}`);
+  }
+
+  return `${deploymentBasePath}${path}`;
+}
 
 /**
  * Flow helpers read the same i18next resources the application ships, so a copy
@@ -128,11 +144,13 @@ export async function reachDetails(
 ) {
   const t = createTranslator(locale);
 
-  await page.goto(localizedRoute(locale, "/"));
+  await page.goto(deployedPath(localizedRoute(locale, "/")));
   await waitForDonationFlowHydration(page);
   await page.getByRole("button", { name: amount }).click();
   await page.getByRole("button", { name: t("common.continue") }).click();
-  await page.waitForURL(`**${localizedRoute(locale, "/details/")}`);
+  await page.waitForURL(
+    `**${deployedPath(localizedRoute(locale, "/details/"))}`,
+  );
 }
 
 export async function reachReview(
@@ -155,5 +173,7 @@ export async function reachReview(
     .getByRole("textbox", { name: t("details.phone"), exact: true })
     .fill("+420 777 123 456");
   await page.getByRole("button", { name: t("common.continue") }).click();
-  await page.waitForURL(`**${localizedRoute(locale, "/review/")}`);
+  await page.waitForURL(
+    `**${deployedPath(localizedRoute(locale, "/review/"))}`,
+  );
 }

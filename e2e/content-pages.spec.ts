@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import {
+  deployedPath,
   measureCopyFeedback,
   mockReadApi,
   reachDetails,
@@ -80,7 +81,7 @@ test.beforeEach(async ({ page }) => {
 test("contact and project pages expose real content and live totals", async ({
   page,
 }) => {
-  await page.goto("/contact/");
+  await page.goto(deployedPath("/contact/"));
   await expect(
     page.getByRole("button", { name: "hello@goodrequest.com" }),
   ).toBeVisible();
@@ -89,7 +90,7 @@ test("contact and project pages expose real content and live totals", async ({
   ).toBeVisible();
 
   await page.getByRole("link", { name: "O projekte" }).click();
-  await page.waitForURL("**/about/");
+  await page.waitForURL(`**${deployedPath("/about/")}`);
   await expect(page.getByText("12 200 €")).toBeVisible();
   await expect(page.getByText("1 028")).toBeVisible();
 });
@@ -98,7 +99,7 @@ test("contact office address is centered on a phone viewport", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/contact/");
+  await page.goto(deployedPath("/contact/"));
 
   const metrics = await page
     .locator('[data-contact="office"]')
@@ -153,7 +154,7 @@ test("contact values copy with localized feedback centered above the clicked val
     ["/cz/contact/", "Zkopírováno do schránky"],
   ] as const) {
     await page.setViewportSize({ width: 1280, height: 900 });
-    await page.goto(path);
+    await page.goto(deployedPath(path));
     await stubClipboard();
     // The assertions below compare bounding boxes, so the page has to stop
     // moving before the first one is measured.
@@ -185,7 +186,7 @@ test("contact values copy with localized feedback centered above the clicked val
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/contact/");
+  await page.goto(deployedPath("/contact/"));
   await stubClipboard();
   const phone = page.getByRole("button", { name: "+421 911 750 750" });
   await phone.click();
@@ -226,7 +227,7 @@ test("form steps expose distinct and consistent social metadata", async ({
       }),
     });
   });
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
   await expectPageMetadata(page, {
     title: "Pomôžte psom a útulkom",
     description:
@@ -253,7 +254,7 @@ test("form steps expose distinct and consistent social metadata", async ({
 
   await page.getByRole("checkbox", { name: /súhlasím/i }).check();
   await page.getByRole("button", { name: "Odoslať formulár" }).click();
-  await page.waitForURL("**/success/");
+  await page.waitForURL(`**${deployedPath("/success/")}`);
   await expectPageMetadata(page, {
     title: "Ďakujeme za pomoc",
     description: "Váš príspevok sme úspešne prijali.",
@@ -263,13 +264,13 @@ test("form steps expose distinct and consistent social metadata", async ({
 });
 
 test("SEO discovery files target the Pages deployment", async ({ request }) => {
-  const sitemap = await request.get("/sitemap.xml");
+  const sitemap = await request.get(deployedPath("/sitemap.xml"));
   expect(sitemap.ok()).toBe(true);
   expect(await sitemap.text()).toContain(
     "https://marosko123.github.io/goodrequest-frontend-assignment/contact/",
   );
 
-  const robots = await request.get("/robots.txt");
+  const robots = await request.get(deployedPath("/robots.txt"));
   expect(robots.ok()).toBe(true);
   expect(await robots.text()).toContain("Sitemap:");
 });
@@ -278,9 +279,24 @@ test("core public routes reflow without horizontal overflow", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 800 });
+  await page.route("**/shelters/results", (route) =>
+    route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        contributors: 1_028,
+        contribution: 12_312_778_679.05,
+      }),
+    }),
+  );
 
   for (const path of ["/", "/contact/", "/about/"]) {
-    await page.goto(path);
+    await page.goto(deployedPath(path));
+
+    if (path === "/about/") {
+      // Nothing can overflow while the fixed-size skeleton is still up.
+      await expect(page.locator("dl dd").first()).toBeVisible();
+    }
+
     const overflows = await page.evaluate(
       () =>
         document.documentElement.scrollWidth >

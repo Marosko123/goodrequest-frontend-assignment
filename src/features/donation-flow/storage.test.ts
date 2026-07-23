@@ -176,6 +176,11 @@ describe("donation-flow session storage", () => {
     ["an invalid first name", { firstName: "Jana7" }],
     ["an invalid last name", { lastName: "Nováková7" }],
     ["a malformed email", { email: "jana" }],
+    ["an invalid Slovak phone number", { phoneE164: "+421000000000" }],
+    [
+      "an invalid Czech phone number",
+      { phoneCountry: "CZ", phoneE164: "+420000000000" },
+    ],
     [
       "a mismatched Slovak phone country",
       {

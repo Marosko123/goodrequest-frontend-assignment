@@ -12,6 +12,7 @@ import { createTranslator } from "@/i18n/instance";
 import { siteUrl } from "@/lib/site";
 
 import {
+  deployedPath,
   localizedRoute,
   mockReadApi,
   waitForDonationFlowHydration,
@@ -38,7 +39,7 @@ test.beforeEach(async ({ page }) => {
 test("switches SK, CZ and EN in the same document while preserving a partial step", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
   await waitForDonationFlowHydration(page);
   await page
     .getByRole("textbox", { name: sk("selection.customAmount") })
@@ -81,7 +82,7 @@ test("switches SK, CZ and EN in the same document while preserving a partial ste
   await expect(czechLanguage).toHaveCSS("background-color", "rgb(55, 48, 163)");
   await expect(czechLanguage).toHaveCSS("color", "rgb(250, 250, 250)");
   await page.mouse.up();
-  await page.waitForURL(`**${localizedRoute("cz", "/")}`);
+  await page.waitForURL(`**${deployedPath(localizedRoute("cz", "/"))}`);
 
   await expect(
     page.getByRole("heading", { name: cz("selection.title") }),
@@ -102,7 +103,7 @@ test("switches SK, CZ and EN in the same document while preserving a partial ste
   ).toBe("same-document");
 
   await page.getByRole("button", { name: cz("common.continue") }).click();
-  await page.waitForURL(`**${localizedRoute("cz", "/details/")}`);
+  await page.waitForURL(`**${deployedPath(localizedRoute("cz", "/details/"))}`);
   await page
     .getByRole("textbox", { name: cz("details.lastName") })
     .fill("Novak");
@@ -112,7 +113,7 @@ test("switches SK, CZ and EN in the same document while preserving a partial ste
 
   await page.getByRole("combobox", { name: cz("language.openMenu") }).click();
   await page.getByRole("option", { name: cz("language.switchToEn") }).click();
-  await page.waitForURL(`**${localizedRoute("en", "/details/")}`);
+  await page.waitForURL(`**${deployedPath(localizedRoute("en", "/details/"))}`);
   await expect(
     page.getByRole("textbox", { name: en("details.lastName") }),
   ).toHaveValue("Novak");
@@ -124,11 +125,11 @@ test("switches SK, CZ and EN in the same document while preserving a partial ste
 test("restores a selection and donor draft after refresh on an equivalent localized route", async ({
   page,
 }) => {
-  await page.goto(localizedRoute("en", "/"));
+  await page.goto(deployedPath(localizedRoute("en", "/")));
   await waitForDonationFlowHydration(page);
   await page.getByRole("button", { name: "50 €" }).click();
   await page.getByRole("button", { name: en("common.continue") }).click();
-  await page.waitForURL(`**${localizedRoute("en", "/details/")}`);
+  await page.waitForURL(`**${deployedPath(localizedRoute("en", "/details/"))}`);
   await page
     .getByRole("textbox", { name: en("details.firstName") })
     .fill("Jane");
@@ -145,11 +146,13 @@ test("restores a selection and donor draft after refresh on an equivalent locali
 
   await page.getByRole("combobox", { name: en("language.openMenu") }).click();
   await page.getByRole("option", { name: en("language.switchToCz") }).click();
-  await page.waitForURL(`**${localizedRoute("cz", "/details/")}`);
+  await page.waitForURL(`**${deployedPath(localizedRoute("cz", "/details/"))}`);
 
   await page.reload();
 
-  await expect(page).toHaveURL(/\/cz\/details\/$/u);
+  await expect(page).toHaveURL(
+    (url) => url.pathname === deployedPath(localizedRoute("cz", "/details/")),
+  );
   await expect(page.locator("html")).toHaveAttribute(
     "lang",
     htmlLangByAppLocale.cz,
@@ -196,7 +199,7 @@ test("restores a selection and donor draft after refresh on an equivalent locali
   });
 
   await page.getByRole("button", { name: cz("common.continue") }).click();
-  await page.waitForURL(`**${localizedRoute("cz", "/review/")}`);
+  await page.waitForURL(`**${deployedPath(localizedRoute("cz", "/review/"))}`);
   await expect(
     page.getByRole("checkbox", { name: cz("review.consent") }),
   ).not.toBeChecked();
@@ -214,7 +217,7 @@ test("completes the English flow, never retains consent, and guards a success re
     });
   });
 
-  await page.goto(localizedRoute("en", "/"));
+  await page.goto(deployedPath(localizedRoute("en", "/")));
   await page.getByRole("button", { name: "20 €" }).click();
   await page.getByRole("button", { name: en("common.continue") }).click();
   await page
@@ -228,13 +231,13 @@ test("completes the English flow, never retains consent, and guards a success re
     .getByRole("textbox", { name: en("details.phone"), exact: true })
     .fill("901234567");
   await page.getByRole("button", { name: en("common.continue") }).click();
-  await page.waitForURL(`**${localizedRoute("en", "/review/")}`);
+  await page.waitForURL(`**${deployedPath(localizedRoute("en", "/review/"))}`);
   await expect(page.getByText("20 €")).toBeVisible();
 
   const consent = page.getByRole("checkbox", { name: en("review.consent") });
   await consent.check();
   await page.getByRole("button", { name: en("review.submit") }).click();
-  await page.waitForURL(`**${localizedRoute("en", "/success/")}`);
+  await page.waitForURL(`**${deployedPath(localizedRoute("en", "/success/"))}`);
   await expect(
     page.getByRole("heading", { name: en("success.title") }),
   ).toBeVisible();
@@ -261,17 +264,17 @@ test("completes the English flow, never retains consent, and guards a success re
   await expectLocalizedSuccessLayout("en");
   await page.getByRole("combobox", { name: en("language.openMenu") }).click();
   await page.getByRole("option", { name: en("language.switchToCz") }).click();
-  await page.waitForURL(`**${localizedRoute("cz", "/success/")}`);
+  await page.waitForURL(`**${deployedPath(localizedRoute("cz", "/success/"))}`);
   await expectLocalizedSuccessLayout("cz");
 
   await page.getByRole("combobox", { name: cz("language.openMenu") }).click();
   await page.getByRole("option", { name: cz("language.switchToSk") }).click();
-  await page.waitForURL(`**${localizedRoute("sk", "/success/")}`);
+  await page.waitForURL(`**${deployedPath(localizedRoute("sk", "/success/"))}`);
   await expectLocalizedSuccessLayout("sk");
 
   await page.getByRole("combobox", { name: sk("language.openMenu") }).click();
   await page.getByRole("option", { name: sk("language.switchToEn") }).click();
-  await page.waitForURL(`**${localizedRoute("en", "/success/")}`);
+  await page.waitForURL(`**${deployedPath(localizedRoute("en", "/success/"))}`);
   await expectLocalizedSuccessLayout("en");
 
   expect(
@@ -281,7 +284,9 @@ test("completes the English flow, never retains consent, and guards a success re
   ).toBeNull();
 
   await page.reload();
-  await expect(page).toHaveURL(/\/en\/$/u);
+  await expect(page).toHaveURL(
+    (url) => url.pathname === deployedPath(localizedRoute("en", "/")),
+  );
   await expect(
     page.getByRole("heading", { name: en("selection.title") }),
   ).toBeVisible();
@@ -296,7 +301,7 @@ for (const locale of supportedLocales) {
     const t = createTranslator(locale);
 
     await page.setViewportSize({ width: 320, height: 800 });
-    await page.goto(localizedRoute(locale, "/"));
+    await page.goto(deployedPath(localizedRoute(locale, "/")));
 
     await expect(page).toHaveTitle(`${t("seo.homeTitle")} | GoodBoy`);
     await expect(page.locator("html")).toHaveAttribute(
@@ -325,7 +330,7 @@ for (const locale of supportedLocales) {
       ),
     ).toEqual([]);
 
-    await page.goto(localizedRoute(locale, "/about/"));
+    await page.goto(deployedPath(localizedRoute(locale, "/about/")));
     await expect(
       page.getByText(displayed(formatCurrency(12_200, locale))),
     ).toBeVisible();
@@ -335,8 +340,10 @@ for (const locale of supportedLocales) {
 test("lists every localized route in the sitemap and hides review steps from robots", async ({
   request,
 }) => {
-  const sitemap = await (await request.get("/sitemap.xml")).text();
-  const robots = await (await request.get("/robots.txt")).text();
+  const sitemap = await (
+    await request.get(deployedPath("/sitemap.xml"))
+  ).text();
+  const robots = await (await request.get(deployedPath("/robots.txt"))).text();
 
   for (const locale of supportedLocales) {
     expect(sitemap).toContain(canonicalUrl(locale, "/about/"));

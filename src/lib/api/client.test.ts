@@ -48,6 +48,23 @@ describe("assignment API client", () => {
     } satisfies Partial<ApiError>);
   });
 
+  it("rejects a shelter response beyond the processing budget", async () => {
+    const validJson = JSON.stringify({
+      shelters: [{ id: 1, name: "Žilinský útulok o.z." }],
+    });
+    server.use(
+      http.get(`${apiBase}/api/v1/shelters/`, () =>
+        HttpResponse.text(`${validJson}${" ".repeat(64 * 1024)}`, {
+          headers: { "content-type": "application/json" },
+        }),
+      ),
+    );
+
+    await expect(getShelters()).rejects.toMatchObject({
+      kind: "contract",
+    } satisfies Partial<ApiError>);
+  });
+
   it("normalizes a nullable contribution to zero cents", async () => {
     server.use(
       http.get(`${apiBase}/api/v1/shelters/results`, () =>

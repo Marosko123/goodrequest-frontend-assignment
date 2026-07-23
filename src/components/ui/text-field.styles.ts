@@ -5,6 +5,9 @@ import { theme } from "@/styles/theme";
 
 export const Field = styled.div`
   display: grid;
+
+  /* Keep this field's rows intrinsic when a neighbour grows. */
+  align-content: start;
   gap: ${theme.space[1]};
   min-width: 0;
 `;

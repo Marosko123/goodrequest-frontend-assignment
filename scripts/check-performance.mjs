@@ -155,6 +155,19 @@ function getExportBasePath(html) {
   return /(?:href|src)="([^"']*?)\/_next\//u.exec(html)?.[1] ?? "";
 }
 
+export function resolveExportPathname(pathname, exportBasePath) {
+  if (!exportBasePath) {
+    return pathname;
+  }
+  if (pathname === exportBasePath) {
+    return "/";
+  }
+  if (pathname.startsWith(`${exportBasePath}/`)) {
+    return pathname.slice(exportBasePath.length);
+  }
+  return null;
+}
+
 export function createStaticServer({
   outputDirectory,
   exportBasePath,
@@ -163,14 +176,16 @@ export function createStaticServer({
   return createServer(async (request, response) => {
     try {
       const requestUrl = new URL(request.url ?? "/", `http://${host}`);
-      let pathname = decodeURIComponent(requestUrl.pathname);
-      if (exportBasePath) {
-        if (pathname === exportBasePath) {
-          pathname = "/";
-        } else if (pathname.startsWith(`${exportBasePath}/`)) {
-          pathname = pathname.slice(exportBasePath.length);
-        }
+      const requestedPathname = decodeURIComponent(requestUrl.pathname);
+      const exportPathname = resolveExportPathname(
+        requestedPathname,
+        exportBasePath,
+      );
+      if (exportPathname === null) {
+        response.writeHead(404).end("Not found");
+        return;
       }
+      let pathname = exportPathname;
       if (pathname.endsWith("/")) pathname += "index.html";
       // Pages redirects an extensionless path to its directory index; mirror it
       // so the suite does not fail on a URL the real host would resolve.

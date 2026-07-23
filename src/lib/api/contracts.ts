@@ -4,6 +4,7 @@ import {
   createPersonNameSchema,
   personNameLimits,
 } from "@/lib/validation/personal-details";
+import { isValidSupportedPhone } from "@/lib/validation/supported-phone";
 import { type ZodMiniType, z } from "@/lib/validation/zod";
 
 import type { paths } from "./generated";
@@ -30,14 +31,24 @@ export type ContributionResponse = JsonResponse<
   "post"
 >;
 
+const maxShelters = 100;
+const maxShelterNameLength = 100;
+
 const shelterSchema = z.strictObject({
   id: z.number().check(z.int()).check(z.positive()),
-  name: z.string().check(z.trim()).check(z.minLength(1)),
+  name: z
+    .string()
+    .check(z.trim())
+    .check(z.minLength(1))
+    .check(z.maxLength(maxShelterNameLength)),
 });
 
 export const sheltersResponseSchema = z
   .strictObject({
-    shelters: z._default(z.optional(z.array(shelterSchema)), []),
+    shelters: z._default(
+      z.optional(z.array(shelterSchema).check(z.maxLength(maxShelters))),
+      [],
+    ),
   })
   .check(
     z.superRefine(({ shelters }, context) => {
@@ -86,7 +97,16 @@ export const contributionRequestSchema = z.strictObject({
           invalid: "Invalid email address.",
           tooLong: "The email address is too long.",
         }),
-        phone: z.string().check(z.regex(/^\+(?:420|421)\d{9}$/u)),
+        phone: z.string().check(
+          z.refine((phone) => {
+            const country = phone.startsWith("+421")
+              ? "SK"
+              : phone.startsWith("+420")
+                ? "CZ"
+                : null;
+            return country ? isValidSupportedPhone(phone, country) : false;
+          }),
+        ),
       }),
     )
     .check(z.length(1)),

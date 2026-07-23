@@ -7,13 +7,16 @@ import { useTranslation } from "react-i18next";
 import { QueryProvider } from "@/app/query-provider";
 import { useDonationFlow } from "@/features/donation-flow/context";
 import { FlowGuard } from "@/features/donation-flow/flow-guard";
-import { mapContributionRequest } from "@/lib/api/mappers";
-import { contributionMutationOptions } from "@/lib/api/queries";
+import {
+  contributionMutationOptions,
+  sheltersQueryOptions,
+} from "@/lib/api/queries";
 import { getLocaleFromPathname, getLocalizedPath } from "@/i18n/config";
 import { useDonationRoutePrefetch } from "@/lib/navigation/use-donation-route-prefetch";
 
 import { ReviewForm } from "./review-form";
 import { Title } from "./review-page.styles";
+import { submitValidatedContribution } from "./submit-contribution";
 
 function ReviewPageContent() {
   const router = useRouter();
@@ -39,9 +42,16 @@ function ReviewPageContent() {
             }}
             selection={state.selection}
             submit={() =>
-              mutation.mutateAsync(
-                mapContributionRequest(state.selection!, state.donor!),
-              )
+              submitValidatedContribution({
+                selection: state.selection!,
+                donor: state.donor!,
+                loadShelters: () =>
+                  queryClient.fetchQuery({
+                    ...sheltersQueryOptions(),
+                    staleTime: 0,
+                  }),
+                submit: (request) => mutation.mutateAsync(request),
+              })
             }
           />
         </section>

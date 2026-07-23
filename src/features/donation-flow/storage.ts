@@ -5,6 +5,7 @@ import {
   createPersonNameSchema,
   personNameLimits,
 } from "@/lib/validation/personal-details";
+import { isValidSupportedPhone } from "@/lib/validation/supported-phone";
 
 import type { PersistedDonationFlowState } from "./state";
 import { storageKey } from "./storage-key";
@@ -55,12 +56,12 @@ const persistedDonorSchema = z
       invalid: "Invalid email address.",
       tooLong: "The email address is too long.",
     }),
-    phoneE164: z.string().check(z.regex(/^\+(?:420|421)\d{9}$/u)),
+    phoneE164: z.string(),
     phoneCountry: phoneCountrySchema,
   })
   .check(
     z.refine(({ phoneCountry, phoneE164 }) =>
-      phoneE164.startsWith(phoneCountry === "SK" ? "+421" : "+420"),
+      isValidSupportedPhone(phoneE164, phoneCountry),
     ),
   );
 // Drafts hold half-typed input, so only the upper bound applies here.

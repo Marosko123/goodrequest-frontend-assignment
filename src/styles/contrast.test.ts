@@ -56,7 +56,6 @@ const textPairs = [
   ["label on a primary fill", colors.onAccent, colors.primary],
   ["label on a destructive fill", colors.onAccent, colors.danger],
   ["inline field error", colors.dangerHover, colors.canvas],
-  ["error summary on its tint", colors.dangerHover, colors.dangerSoft],
   ["success copy on its tint", colors.success, colors.successSoft],
   ["warning copy on its tint", colors.warning, colors.warningSoft],
 ] as const;
@@ -66,6 +65,8 @@ const uiPairs = [
   ["default focus indicator on surface", colors.primaryPressed, colors.surface],
   ["unchecked control boundary", colors.textSubtle, colors.canvas],
   ["de-emphasised icon link", colors.textSubtle, colors.canvas],
+  // Alert glyphs are non-text UI and need 3:1 against their tint.
+  ["error alert glyph on its tint", colors.danger, colors.dangerSoft],
 ] as const;
 
 describe("palette contrast", () => {

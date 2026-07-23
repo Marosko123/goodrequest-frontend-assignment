@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { ApiError } from "@/lib/api/client";
 import { assertContributionAccepted } from "@/lib/api/outcome";
 
+import { ContributionPreparationError } from "./submit-contribution";
 import { getSubmissionStateFromError } from "./submission";
 
 describe("submission outcome", () => {
@@ -53,5 +54,16 @@ describe("submission outcome", () => {
     expect(getSubmissionStateFromError(new Error("unexpected"))).toBe(
       "service-unavailable",
     );
+  });
+
+  it("distinguishes invalid local data from an unavailable preflight", () => {
+    expect(
+      getSubmissionStateFromError(new ContributionPreparationError("invalid")),
+    ).toBe("invalid");
+    expect(
+      getSubmissionStateFromError(
+        new ContributionPreparationError("unavailable"),
+      ),
+    ).toBe("service-unavailable");
   });
 });

@@ -19,6 +19,51 @@ const apiBaseUrl = (
   process.env.NEXT_PUBLIC_API_BASE_URL ?? defaultApiBaseUrl
 ).replace(/\/$/, "");
 const requestTimeoutMs = 10_000;
+const maxJsonResponseBytes = 64 * 1024;
+
+async function readJson(response: Response): Promise<unknown> {
+  const declaredBytes = Number(response.headers.get("content-length"));
+  if (Number.isFinite(declaredBytes) && declaredBytes > maxJsonResponseBytes) {
+    throw new ApiError(
+      "contract",
+      "The API response exceeds the supported size.",
+    );
+  }
+
+  if (!response.body) {
+    return response.json();
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let receivedBytes = 0;
+  let json = "";
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      receivedBytes += value.byteLength;
+      if (receivedBytes > maxJsonResponseBytes) {
+        await reader.cancel().catch(() => undefined);
+        throw new ApiError(
+          "contract",
+          "The API response exceeds the supported size.",
+        );
+      }
+
+      json += decoder.decode(value, { stream: true });
+    }
+    json += decoder.decode();
+  } finally {
+    reader.releaseLock();
+  }
+
+  return JSON.parse(json);
+}
 
 async function requestJson<Schema extends ZodMiniType>(
   path: string,
@@ -56,8 +101,11 @@ async function requestJson<Schema extends ZodMiniType>(
 
   let body: unknown;
   try {
-    body = await response.json();
-  } catch {
+    body = await readJson(response);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
     throw new ApiError("contract", "The API returned invalid JSON.");
   }
 

@@ -17,6 +17,8 @@ const sharedExclude = [...configDefaults.exclude, ".worktrees/**", "e2e/**"];
  * so a forgotten entry costs speed and never correctness.
  */
 const pureLogicTests = [
+  "scripts/check-performance.test.mjs",
+  "scripts/finalize-static-export.test.mjs",
   "src/app/sitemap.test.ts",
   "src/components/layout/donation-progress-model.test.ts",
   "src/components/layout/donation-step.test.ts",
@@ -26,6 +28,7 @@ const pureLogicTests = [
   "src/features/selection/amount.test.ts",
   "src/features/selection/schema.test.ts",
   "src/lib/site.test.ts",
+  "src/lib/validation/supported-phone.test.ts",
   "src/styles/breakpoints.test.ts",
   "src/styles/contrast.test.ts",
   "src/styles/motion-system.test.ts",

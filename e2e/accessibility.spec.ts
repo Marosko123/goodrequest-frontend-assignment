@@ -3,7 +3,12 @@ import { expect, type Page, test } from "@playwright/test";
 
 import { createTranslator } from "@/i18n/instance";
 
-import { localizedRoute, mockReadApi, reachReview } from "./helpers";
+import {
+  deployedPath,
+  localizedRoute,
+  mockReadApi,
+  reachReview,
+} from "./helpers";
 
 /**
  * Every severity counts, not just serious and critical. The measured baseline is
@@ -45,16 +50,16 @@ test.beforeEach(async ({ page }) => {
 test("public and donation routes have no automated findings at any severity", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto(deployedPath("/"));
   await expectNoAxeFindings(page);
 
   await reachReview(page);
   await expectNoAxeFindings(page);
 
-  await page.goto("/contact/");
+  await page.goto(deployedPath("/contact/"));
   await expectNoAxeFindings(page);
 
-  await page.goto("/about/");
+  await page.goto(deployedPath("/about/"));
   await expect(page.getByText("12 200 €")).toBeVisible();
   await expectNoAxeFindings(page);
 });
@@ -64,7 +69,7 @@ test("the skip link is the first tab stop and moves focus into main", async ({
 }) => {
   for (const locale of ["sk", "en", "cz"] as const) {
     const t = createTranslator(locale);
-    await page.goto(localizedRoute(locale, "/"));
+    await page.goto(deployedPath(localizedRoute(locale, "/")));
 
     const skipLink = page.getByRole("link", {
       name: t("common.skipToContent"),
@@ -84,7 +89,7 @@ test("the skip link reaches main on the content and error routes too", async ({
   page,
 }) => {
   for (const path of ["/contact/", "/about/", "/this-route-does-not-exist/"]) {
-    await page.goto(path);
+    await page.goto(deployedPath(path));
     await page.keyboard.press("Tab");
     await page.keyboard.press("Enter");
     await expect(page.locator("main#main-content")).toBeFocused();
