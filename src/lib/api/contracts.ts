@@ -4,6 +4,7 @@ import {
   createPersonNameSchema,
   personNameLimits,
 } from "@/lib/validation/personal-details";
+import { isValidSupportedPhone } from "@/lib/validation/supported-phone";
 import { type ZodMiniType, z } from "@/lib/validation/zod";
 
 import type { paths } from "./generated";
@@ -96,7 +97,16 @@ export const contributionRequestSchema = z.strictObject({
           invalid: "Invalid email address.",
           tooLong: "The email address is too long.",
         }),
-        phone: z.string().check(z.regex(/^\+(?:420|421)\d{9}$/u)),
+        phone: z.string().check(
+          z.refine((phone) => {
+            const country = phone.startsWith("+421")
+              ? "SK"
+              : phone.startsWith("+420")
+                ? "CZ"
+                : null;
+            return country ? isValidSupportedPhone(phone, country) : false;
+          }),
+        ),
       }),
     )
     .check(z.length(1)),

@@ -17,8 +17,8 @@ export function createSelectionSchema(
     })
     .check(
       // Both fields are checked independently: an invalid amount must not hide a
-      // missing shelter, or the error summary would reveal the two errors across
-      // two submit attempts instead of listing them together.
+      // missing shelter, or the person would discover the two errors across two
+      // submit attempts instead of seeing both fields flagged at once.
       z.superRefine((values, context) => {
         const amountResult = parseDonationAmount(values.amount);
         if (!amountResult.ok) {

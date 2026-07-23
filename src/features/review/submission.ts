@@ -1,6 +1,8 @@
 import { ApiError } from "@/lib/api/errors";
 import { ContributionRejectedError } from "@/lib/api/outcome";
 
+import { ContributionPreparationError } from "./submit-contribution";
+
 export type SubmissionState =
   | "idle"
   | "submitting"
@@ -19,6 +21,10 @@ type SubmissionFailureState = Exclude<
 export function getSubmissionStateFromError(
   error: unknown,
 ): SubmissionFailureState {
+  if (error instanceof ContributionPreparationError) {
+    return error.kind === "invalid" ? "invalid" : "service-unavailable";
+  }
+
   if (
     error instanceof ApiError &&
     (error.kind === "network" ||

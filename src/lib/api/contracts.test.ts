@@ -63,6 +63,7 @@ describe("contributionRequestSchema", () => {
     [{ ...contributor, phone: undefined }],
     [{ ...contributor, phone: "+49151234567" }],
     [{ ...contributor, phone: "0901234567" }],
+    [{ ...contributor, phone: "+421000000000" }],
   ])("rejects a contributor without a supported normalized phone", (value) => {
     expect(
       contributionRequestSchema.safeParse({ contributors: [value], value: 25 })
