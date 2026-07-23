@@ -16,6 +16,7 @@ test("amount input rejects semantic changes and remains fully visible", async ({
   page,
 }) => {
   await page.goto(deployedPath("/"));
+  await waitForDonationFlowHydration(page);
   const amount = page.getByRole("textbox", { name: "Vlastná suma" });
 
   await amount.fill("-151");
