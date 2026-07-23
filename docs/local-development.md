@@ -79,6 +79,13 @@ Playwright suites live in `e2e/` and assert behaviour, not implementation.
 Locally they run against the dev server; `PLAYWRIGHT_TARGET=export` and CI run
 them against the built `out/` artifact, which is what actually ships.
 
+One rule decides whether a layout or style assertion earns its place: **assert
+relationships, never absolute values.** `celebration is centred within 1px` and
+`the page never scrolls horizontally at 280px` stay true when a spacing token
+changes. `main is at x=80, width=658` does not — it fails on every intentional
+design change, and the only possible fix is to rewrite the expected number. The
+second kind proves nothing and was removed.
+
 Three suites in `src/styles/` are drift guards rather than ordinary tests:
 `contrast.test.ts` computes real WCAG ratios from the palette,
 `token-discipline.test.ts` fails on a raw colour that bypassed the tokens, and

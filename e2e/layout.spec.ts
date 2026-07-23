@@ -8,67 +8,6 @@ import {
   waitForDonationFlowHydration,
 } from "./helpers";
 
-type ExpectedBox = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
-async function expectBox(locator: Locator, expected: Partial<ExpectedBox>) {
-  await expect(locator).toBeVisible();
-  expect(await locator.boundingBox()).toEqual(
-    expect.objectContaining(expected),
-  );
-}
-
-async function expectDonationShell(page: Page) {
-  await expectBox(page.getByRole("navigation", { name: "Priebeh príspevku" }), {
-    x: 80,
-    y: 60,
-    width: 658,
-    height: 32,
-  });
-  await expectBox(page.locator("main"), {
-    x: 80,
-    y: 132,
-    width: 658,
-  });
-  await expectBox(page.locator("aside"), {
-    x: 818,
-    y: 20,
-    width: 602,
-    height: 984,
-  });
-  await expectBox(page.locator("footer"), {
-    x: 80,
-    y: 908,
-    width: 658,
-    height: 56,
-  });
-  await expect(page.getByRole("link", { name: "Facebook" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Instagram" })).toBeVisible();
-  await page.mouse.move(0, 0);
-}
-
-async function expectPublicShell(page: Page) {
-  await expectBox(page.locator("main"), {
-    x: 80,
-    y: 104,
-    width: 1280,
-    height: 804,
-  });
-  await expectBox(page.locator("footer"), {
-    x: 80,
-    y: 908,
-    width: 1280,
-    height: 56,
-  });
-  await expect(page.getByRole("link", { name: "Facebook" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Instagram" })).toBeVisible();
-  await page.mouse.move(0, 0);
-}
-
 async function expectNoHorizontalOverflow(page: Page, label: string) {
   const routeTransition = page.locator('[data-motion="step-enter"]').last();
   if (await routeTransition.count()) {
@@ -200,35 +139,6 @@ test.beforeEach(async ({ page }) => {
   await mockReadApi(page);
 });
 
-test("selection and details keep the shared Figma shell", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("button", { name: "50 €" }).click();
-  await expectDonationShell(page);
-
-  await page.getByRole("button", { name: "20 €" }).click();
-  await page.getByRole("button", { name: "Pokračovať" }).click();
-  await page.waitForURL("**/details/");
-  await expectDonationShell(page);
-});
-
-test("review and success keep the shared Figma shell", async ({ page }) => {
-  await page.route("**/api/v1/shelters/contribute", async (route) => {
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        messages: [{ message: "Príspevok prijatý", type: "SUCCESS" }],
-      }),
-    });
-  });
-  await reachReview(page);
-  await expectDonationShell(page);
-
-  await page.getByRole("checkbox", { name: /súhlasím/i }).check();
-  await page.getByRole("button", { name: "Odoslať formulár" }).click();
-  await page.waitForURL("**/success/");
-  await expectDonationShell(page);
-});
-
 test("mobile donation shell starts at the top and fills a tall viewport", async ({
   page,
 }) => {
@@ -287,41 +197,6 @@ test("mobile donation shell starts at the top and fills a tall viewport", async 
   await page.getByRole("button", { name: "Odoslať formulár" }).click();
   await page.waitForURL("**/success/");
   await expectTallMobileShell();
-});
-
-test("contact and about use the exact public-page geometry", async ({
-  page,
-}) => {
-  await page.goto("/contact/");
-  await expectPublicShell(page);
-  await expectBox(page.locator("article > div"), {
-    x: 160,
-    y: 228,
-    width: 1120,
-    height: 224,
-  });
-  await expectBox(page.locator("main img"), {
-    x: 160,
-    y: 492,
-    width: 1120,
-    height: 376,
-  });
-
-  await page.goto("/about/");
-  await expect(page.getByText("12 200 €")).toBeVisible();
-  await expectPublicShell(page);
-  await expectBox(page.locator("article"), {
-    x: 80,
-    y: 104,
-    width: 1280,
-    height: 656,
-  });
-  await expectBox(page.getByRole("region", { name: "Aktuálne výsledky" }), {
-    x: 80,
-    y: 340,
-    width: 1280,
-    height: 236,
-  });
 });
 
 test("all assignment screens reflow at the target widths", async ({ page }) => {
